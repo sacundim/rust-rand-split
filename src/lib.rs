@@ -10,11 +10,7 @@
 extern crate rand;
 
 pub mod splittable {
-    //! A trait for splittable pseudo random number generators, that
-    //! support a "split" operation that produces two generators whose
-    //! initial state depends on the PRNG's state, but produce
-    //! statistically independent results thereafter.
-    //!
+    //! Traits to support splittable random number generators.
     //! References:
     //!
     //! * Claessen, Koen and Michał H. Pałka.  2013.  "Splittable
@@ -28,14 +24,50 @@ pub mod splittable {
 
     use rand::Rng;
 
-    pub trait SplittableRng : Rng {
+    /// A trait for **splittable** pseudo random number generators,
+    /// that support a "split" operations that produce two generators
+    /// whose initial state depends on the source RNG's state, but
+    /// produce statistically independent results.
+    pub trait SplittableRng : Rng + Sized {
 
-        /// Split this random number generator into two "branches"
-        /// that produce statistically independent results.  Note that
-        /// the original generator is moved into this function, and
-        /// can then no longer be reused.
-        fn split(self) -> (Self, Self);
+        /// The type of "splits" produced off a `SplittableRng`
+        /// instance.
+        type Split : SplitRng<Self>;
 
+        /// Split this random number generator into "branches" that
+        /// produce statistically independent results.
+        ///
+        /// The original generator is moved into this function, and
+        /// can then no longer be reused.  This is deliberate; the
+        /// Claessen & Pałka construction requires this.
+        ///
+        /// But the `Split` object returned from here supports
+        /// instantiating the same branch multiple times.  This is
+        /// also deliberate.
+        fn splitn(self) -> Self::Split;
+
+        /// Split this random number generator into two branches.
+        /// This has a default implementation in terms of `splitn`.
+        fn split(self) -> (Self, Self) {
+            let splits: Self::Split = self.splitn();
+            (splits.branch(0), splits.branch(1))
+        }
+
+    }
+
+    /// The trait implemented by the "splits" of a `SplittableRng`.
+    /// This should be seen as a factory for `usize`-indexed
+    /// `SplittableRng` instances.
+    pub trait SplitRng<R> {
+        /// Instantiate the `i`th branch of the captured
+        /// `SplittableRng`.  
+        ///
+        /// Note that instantiating the same `i` multiple times is
+        /// allowed; they all start from the same state.  This is
+        /// useful in some cases; for example, random generation of
+        /// deterministic functions (like Haskell's QuickCheck library
+        /// does).
+        fn branch(&self, i: usize) -> R;
     }
 
 }
@@ -54,11 +86,11 @@ pub mod siprng {
     //!   *Haskell '13 Proceedings of the 2013 ACM SIGPLAN symposium
     //!   on Haskell*, pp. 47-58.
     //!
-    //! Instead of using the Skein hash function, however, we use
-    //! SipHash.
+    //! Instead of the Skein hash function, however, we use
+    //! SipHash-1-3 in counter mode.
 
     use rand::{Rand, Rng, SeedableRng};
-    use splittable::SplittableRng;
+    use splittable::{SplittableRng, SplitRng};
     use std::mem;
 
     #[derive(Clone)]
@@ -70,6 +102,10 @@ pub mod siprng {
         ctr: u64,
         len: usize
     }
+
+    /// A "split" of a `SipRng`.
+    pub struct SipRngSplit(SipRng);
+
 
     macro_rules! sipround {
         ($v0: expr, $v1: expr, $v2: expr, $v3: expr) => {
@@ -108,6 +144,7 @@ pub mod siprng {
             sipround!(self.v0, self.v1, self.v2, self.v3);
             self.v0 ^= self.ctr;
             self.ctr.wrapping_add(1);
+            // TODO: should we do something here if we hit zero again?
         }
 
         #[inline]
@@ -120,13 +157,19 @@ pub mod siprng {
 
     }
 
+    impl SplitRng<SipRng> for SipRngSplit {
+        fn branch(&self, i: usize) -> SipRng {
+            let mut r = self.0.clone();
+            r.descend(i as u64);
+            r
+        }
+    }
 
     impl SplittableRng for SipRng {
+        type Split = SipRngSplit;
 
-        fn split(self) -> (Self, Self) {
-            let (mut r0, mut r1) = (self.clone(), self.clone());
-            r0.descend(0); r1.descend(1);
-            (r0, r1)
+        fn splitn(self) -> SipRngSplit {
+            SipRngSplit(self)
         }
 
     }
@@ -195,6 +238,7 @@ pub mod siprng {
 
 }
 
+
 #[cfg(test)]
 mod tests {
     /*
@@ -218,7 +262,6 @@ mod tests {
         assert!(iter_eq(ra.gen_ascii_chars().take(100),
                         rb.gen_ascii_chars().take(100)));
         
-
         let (mut ra0, mut ra1) = ra.split();
         let (mut rb0, mut rb1) = rb.split();
 
