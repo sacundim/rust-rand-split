@@ -1,5 +1,5 @@
 [package]
-name = "splittable-random"
+name = "split-rand"
 version = "0.1.0"
 authors = ["Luis Casillas <luis@casillas.org>"]
 
