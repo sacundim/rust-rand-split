@@ -1,0 +1,7 @@
+[package]
+name = "splittable-random"
+version = "0.1.0"
+authors = ["Luis Casillas <luis@casillas.org>"]
+
+[dependencies]
+rand = "0.3"
