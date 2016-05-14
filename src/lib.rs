@@ -163,10 +163,10 @@ pub mod siprng {
         }
 
         #[inline]
-        fn descend(&mut self, branch: u64) {
-            self.v3 ^= branch;
+        fn descend(&mut self, i: u64) {
+            self.v3 ^= i;
             sipround!(self.v0, self.v1, self.v2, self.v3);
-            self.v0 ^= branch;
+            self.v0 ^= i;
             self.len.wrapping_add(1);
             self.ctr = 0;
         }
