@@ -2,6 +2,9 @@
 name = "split-rand"
 version = "0.1.0"
 authors = ["Luis Casillas <luis@casillas.org>"]
+license = "MIT/Apache-2.0"
+description = "Splittable random number generators."
+keywords = ["random", "rng"]
 
 [dependencies]
 rand = "0.3"
