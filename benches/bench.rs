@@ -2,7 +2,7 @@
 
 extern crate mersenne_twister;
 extern crate rand;
-extern crate split_rand;
+extern crate rand_split;
 extern crate test;
 
 const RAND_BENCH_N: u64 = 1000;
@@ -11,7 +11,7 @@ use mersenne_twister::{MT19937, MT19937_64};
 use rand::{Rng, SeedableRng, OsRng, StdRng, XorShiftRng};
 use rand::chacha::ChaChaRng;
 use rand::isaac::{IsaacRng, Isaac64Rng};
-use split_rand::siprng::SipRng;
+use rand_split::siprng::SipRng;
 use std::mem::size_of;
 use test::{black_box, Bencher};
 
