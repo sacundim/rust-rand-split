@@ -11,6 +11,7 @@ extern crate rand;
 
 pub mod splittable {
     //! Traits to support splittable random number generators.
+    //!
     //! References:
     //!
     //! * Claessen, Koen and Michał H. Pałka.  2013.  ["Splittable
@@ -82,18 +83,28 @@ pub mod splittable {
     /// A type that can be randomly generated using a `SplittableRng`.
     /// Note that any `Rand` type is trivially also `SplitRand`, but not
     /// vice-versa.
+    ///
+    /// The "killer app" for this is random generation of
+    /// deterministic closures.  Yes, you read that right:
+    ///
+    /// * Each generated closure is **deterministic**: it maps equal
+    ///   arguments to equal results on succesive calls.
+    /// * The generated closures are **random**: the deterministic
+    ///   mapping that each one implements is randomly chosen.
+    ///
+    /// **This feature is experimental, and its API may change.**
     pub trait SplitRand {
 
         /// Generates a random instance of this type using the
         /// specified source of randomness.
-        fn rand<R, S>(split: S) -> Self
-            where R: Rng, S: SplitRng<R>;
+        fn rand<R, S>(split: &S) -> Self
+            where R: Rng, S: SplitRng<R>, S: Clone;
     
     }
 
     impl<A: Hash, B: Rand> SplitRand for Box<Fn(A) -> B> {
-        fn rand<R, S>(split: S) -> Self 
-            where R: Rng, S: SplitRng<R>, S: 'static
+        fn rand<R, S>(split: &S) -> Self 
+            where R: Rng, S: SplitRng<R>, S: Clone, S: 'static
         {
             fn hash<T: Hash>(t: &T) -> u64 {
                 let mut s = SipHasher::new();
@@ -101,6 +112,7 @@ pub mod splittable {
                 s.finish()
             }
 
+            let split = split.clone();
             Box::new(move |arg: A| {
                 Rand::rand(&mut split.branch(hash(&arg) as usize))
             })
@@ -148,6 +160,7 @@ pub mod siprng {
     }
 
     /// A "split" of a `SipRng`.
+    #[derive(Clone)]
     pub struct SipRngSplit(SipRng);
 
 
@@ -338,8 +351,8 @@ mod tests {
 
         let ra: SipRng = SeedableRng::from_seed(seed);
         let rb: SipRng = SeedableRng::from_seed(seed);
-        let fa: F = SplitRand::rand(ra.splitn());
-        let fb: F = SplitRand::rand(rb.splitn());
+        let fa: F = SplitRand::rand(&ra.splitn());
+        let fb: F = SplitRand::rand(&rb.splitn());
 
         let mut rc: SipRng = SeedableRng::from_seed(seed);
         for _ in 0..100 {
