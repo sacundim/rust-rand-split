@@ -50,7 +50,7 @@ pub trait SplittableRng : Rng + Sized {
     /// A split is an immutable object that captures the state of the
     /// RNG at the branching point, and serves as a factory for
     /// constructing RNGs for the "branches."
-    type Split : SplitRng<Self>;
+    type Split : RngSplit<Self>;
     
     /// Split this generator into branches.  Each branch is accessible
     /// from the resulting "split" object as a unique `usize` index.
@@ -76,7 +76,7 @@ pub trait SplittableRng : Rng + Sized {
 /// The trait implemented by the "splits" of a `SplittableRng`.  These
 /// objects act as immutable factories for `SplittableRng` instances,
 /// accessed by supplying an `usize` index.
-pub trait SplitRng<R> {
+pub trait RngSplit<R> {
     /// Instantiate the `i`th branch of the captured `SplittableRng`.
     ///
     /// Note that instantiating the same `i` multiple times is
@@ -106,13 +106,13 @@ pub trait SplitRand {
     /// Generates a random instance of this type using the
     /// specified source of randomness.
     fn rand<R, S>(split: &S) -> Self
-        where R: Rng, S: SplitRng<R>, S: Clone;
+        where R: Rng, S: RngSplit<R>, S: Clone;
     
 }
 
 impl<A: Hash, B: Rand> SplitRand for Box<Fn(A) -> B> {
     fn rand<R, S>(split: &S) -> Self 
-        where R: Rng, S: SplitRng<R>, S: Clone, S: 'static
+        where R: Rng, S: RngSplit<R>, S: Clone, S: 'static
     {
         fn hash<T: Hash>(t: &T) -> u64 {
             let mut s = SipHasher::new();
@@ -134,7 +134,7 @@ pub mod siprng {
     //! cryptographically secure PRNG.**
 
     use rand::{Rand, Rng, SeedableRng};
-    use super::{SplittableRng, SplitRng};
+    use super::{SplittableRng, RngSplit};
     use std::mem;
 
     /// This generator is broadly modeled after Claessen and Pałka's,
@@ -220,7 +220,7 @@ pub mod siprng {
 
     }
 
-    impl SplitRng<SipRng> for SipRngSplit {
+    impl RngSplit<SipRng> for SipRngSplit {
         fn branch(&self, i: usize) -> SipRng {
             let mut r = self.0.clone();
             r.descend(i as u64);
