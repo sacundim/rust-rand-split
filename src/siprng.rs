@@ -226,8 +226,8 @@ mod tests {
 
         let ra: SipRng = SeedableRng::from_seed(seed);
         let rb: SipRng = SeedableRng::from_seed(seed);
-        let fa: F = SplitRand::rand(&ra.splitn());
-        let fb: F = SplitRand::rand(&rb.splitn());
+        let fa: F = SplitRand::rand(ra);
+        let fb: F = SplitRand::rand(rb);
 
         let mut rc: SipRng = SeedableRng::from_seed(seed);
         for _ in 0..100 {
