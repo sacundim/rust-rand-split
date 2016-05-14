@@ -8,3 +8,6 @@ keywords = ["random", "rng"]
 
 [dependencies]
 rand = "0.3"
+
+[dev-dependencies]
+mersenne_twister = "0.3.0"

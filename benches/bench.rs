@@ -1,17 +1,19 @@
 #![feature(test)]
 
+extern crate mersenne_twister;
 extern crate rand;
 extern crate split_rand;
 extern crate test;
 
 const RAND_BENCH_N: u64 = 1000;
 
-use std::mem::size_of;
-use test::{black_box, Bencher};
-use rand::{Rng, OsRng, StdRng, XorShiftRng};
+use mersenne_twister::{MT19937, MT19937_64};
+use rand::{Rng, SeedableRng, OsRng, StdRng, XorShiftRng};
 use rand::chacha::ChaChaRng;
 use rand::isaac::{IsaacRng, Isaac64Rng};
 use split_rand::siprng::SipRng;
+use std::mem::size_of;
+use test::{black_box, Bencher};
 
 #[bench]
 fn rand_siprng(b: &mut Bencher) {
@@ -88,4 +90,34 @@ fn rand_chacha(b: &mut Bencher) {
     });
     b.bytes = size_of::<usize>() as u64 * RAND_BENCH_N;
 }
+
+
+/*
+ * Benchmarks to compare to the `mersenne_twister` crate.
+ */
+
+#[bench]
+fn rand_mt19937(b: &mut Bencher) {
+    let seed: u64 = OsRng::new().unwrap().gen();
+    let mut rng: MT19937 = SeedableRng::from_seed(seed);
+    b.iter(|| {
+        for _ in 0..RAND_BENCH_N {
+            black_box(rng.gen::<usize>());
+        }
+    });
+    b.bytes = size_of::<usize>() as u64 * RAND_BENCH_N;
+}
+
+#[bench]
+fn rand_mt19937_64(b: &mut Bencher) {
+    let seed: u64 = OsRng::new().unwrap().gen();
+    let mut rng: MT19937_64 = SeedableRng::from_seed(seed);
+    b.iter(|| {
+        for _ in 0..RAND_BENCH_N {
+            black_box(rng.gen::<usize>());
+        }
+    });
+    b.bytes = size_of::<usize>() as u64 * RAND_BENCH_N;
+}
+
 
