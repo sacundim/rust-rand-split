@@ -44,27 +44,27 @@ use rand::{Rng, Rand};
 use std::hash::{Hash, Hasher, SipHasher};
 
 /// A trait for **splittable** pseudo random generators.  
-pub trait SplittableRng : Rng + Sized {
+pub trait SplitRng : Rng + Sized {
     
-    /// The type of "splits" produced off a `SplittableRng` instance.
-    /// A split is an immutable object that captures the state of the
+    /// The type of branches produced off a `SplitRng` instance.  A
+    /// branch is an immutable object that captures the state of the
     /// RNG at the branching point, and serves as a factory for
-    /// constructing RNGs for the "branches."
+    /// constructing RNGs for the "children."
     type Branch : RngBranch<Self>;
     
     /// Split this generator into branches.  Each branch is accessible
-    /// from the resulting "split" object as a unique `usize` index.
+    /// from the resulting `Branch` object as a unique `usize` index.
     ///
     /// The original generator is moved into this function, and can
     /// then no longer be reused.  This is deliberate; the Claessen &
     /// Pałka splittable RNG construction requires this.
     ///
-    /// But note that the `Split` object returned from here supports
+    /// But note that the `Branch` object returned from here supports
     /// instantiating the same branch multiple times.  This is also
     /// deliberate.
     fn splitn(self) -> Self::Branch;
     
-    /// Split this random number generator into two branches.  This
+    /// Split this random number generator into two children.  This
     /// has a default implementation in terms of `splitn`.
     fn split(self) -> (Self, Self) {
         let branches: Self::Branch = self.splitn();
@@ -73,11 +73,11 @@ pub trait SplittableRng : Rng + Sized {
     
 }
 
-/// The trait implemented by the "splits" of a `SplittableRng`.  These
-/// objects act as immutable factories for `SplittableRng` instances,
+/// The trait implemented by the branchea of a `SplitRng`.  These
+/// objects act as immutable factories for `SplitRng` instances,
 /// accessed by supplying an `usize` index.
 pub trait RngBranch<R> {
-    /// Instantiate the `i`th branch of the captured `SplittableRng`.
+    /// Instantiate the `i`th branch of the captured `SplitRng`.
     ///
     /// Note that instantiating the same `i` multiple times is
     /// allowed, and they all start from the same state.  This is
@@ -88,17 +88,22 @@ pub trait RngBranch<R> {
 }
 
 
-/// A type that can be randomly generated using a `SplittableRng`.
-/// Note that any `Rand` type is trivially also `SplitRand`, but not
-/// vice-versa.
+/// A type that can be randomly generated using a `SplitRng`.  
 ///
-/// The "killer app" for this is random generation of deterministic
-/// closures.  Yes, you read that right:
+/// Note that any `Rand` type can be trivially made `SplitRand` but
+/// not vice-versa.  The reason is that a `SplitRand` type may be one
+/// whose generation needs the additional power afforded by a
+/// `SplitRng`.
+///
+/// The "killer app" for this trait is random generation of
+/// deterministic closures.  Yes, you read that right:
 ///
 /// * Each generated closure is **deterministic**: it maps equal
 ///   arguments to equal results on succesive calls.
 /// * The generated closures are **random**: the deterministic mapping
-/// that each one implements is randomly chosen.
+///   that each one implements is randomly chosen.
+///
+/// See for example the `Box<Fn(A) -> B>` impl.
 ///
 /// **This feature is experimental, and its API may change.**
 pub trait SplitRand {
@@ -135,7 +140,7 @@ pub mod siprng {
     //! cryptographically secure PRNG.**
 
     use rand::{Rand, Rng, SeedableRng};
-    use super::{SplittableRng, RngBranch};
+    use super::{SplitRng, RngBranch};
     use std::mem;
 
     /// This generator is broadly modeled after Claessen and Pałka's,
@@ -229,7 +234,7 @@ pub mod siprng {
         }
     }
 
-    impl SplittableRng for SipRng {
+    impl SplitRng for SipRng {
         type Branch = SipRngBranch;
 
         fn splitn(self) -> SipRngBranch {
@@ -313,7 +318,7 @@ mod tests {
     use rand::{Rng, SeedableRng, Rand};
     use rand::os::OsRng;
     use siprng::SipRng;
-    use super::{SplittableRng, SplitRand};
+    use super::{SplitRng, SplitRand};
 
 
     #[test]
