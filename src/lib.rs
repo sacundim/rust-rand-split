@@ -50,7 +50,7 @@ pub trait SplittableRng : Rng + Sized {
     /// A split is an immutable object that captures the state of the
     /// RNG at the branching point, and serves as a factory for
     /// constructing RNGs for the "branches."
-    type Split : RngSplit<Self>;
+    type Branch : RngBranch<Self>;
     
     /// Split this generator into branches.  Each branch is accessible
     /// from the resulting "split" object as a unique `usize` index.
@@ -62,13 +62,13 @@ pub trait SplittableRng : Rng + Sized {
     /// But note that the `Split` object returned from here supports
     /// instantiating the same branch multiple times.  This is also
     /// deliberate.
-    fn splitn(self) -> Self::Split;
+    fn splitn(self) -> Self::Branch;
     
     /// Split this random number generator into two branches.  This
     /// has a default implementation in terms of `splitn`.
     fn split(self) -> (Self, Self) {
-        let splits: Self::Split = self.splitn();
-        (splits.branch(0), splits.branch(1))
+        let branches: Self::Branch = self.splitn();
+        (branches.branch(0), branches.branch(1))
     }
     
 }
@@ -76,7 +76,7 @@ pub trait SplittableRng : Rng + Sized {
 /// The trait implemented by the "splits" of a `SplittableRng`.  These
 /// objects act as immutable factories for `SplittableRng` instances,
 /// accessed by supplying an `usize` index.
-pub trait RngSplit<R> {
+pub trait RngBranch<R> {
     /// Instantiate the `i`th branch of the captured `SplittableRng`.
     ///
     /// Note that instantiating the same `i` multiple times is
@@ -106,13 +106,13 @@ pub trait SplitRand {
     /// Generates a random instance of this type using the
     /// specified source of randomness.
     fn rand<R, S>(split: &S) -> Self
-        where R: Rng, S: RngSplit<R>, S: Clone;
+        where R: Rng, S: RngBranch<R>, S: Clone;
     
 }
 
 impl<A: Hash, B: Rand> SplitRand for Box<Fn(A) -> B> {
     fn rand<R, S>(split: &S) -> Self 
-        where R: Rng, S: RngSplit<R>, S: Clone, S: 'static
+        where R: Rng, S: RngBranch<R>, S: Clone, S: 'static
     {
         fn hash<T: Hash>(t: &T) -> u64 {
             let mut s = SipHasher::new();
@@ -128,13 +128,14 @@ impl<A: Hash, B: Rand> SplitRand for Box<Fn(A) -> B> {
 }
 
 
+
 pub mod siprng {
     //! A splittable pseudo-random number generator based on the
     //! SipHash-1-3 function.  **This is not intended to be a
     //! cryptographically secure PRNG.**
 
     use rand::{Rand, Rng, SeedableRng};
-    use super::{SplittableRng, RngSplit};
+    use super::{SplittableRng, RngBranch};
     use std::mem;
 
     /// This generator is broadly modeled after Claessen and Pałka's,
@@ -166,7 +167,7 @@ pub mod siprng {
 
     /// A split of a `SipRng`.
     #[derive(Clone)]
-    pub struct SipRngSplit(SipRng);
+    pub struct SipRngBranch(SipRng);
 
 
     macro_rules! sipround {
@@ -220,7 +221,7 @@ pub mod siprng {
 
     }
 
-    impl RngSplit<SipRng> for SipRngSplit {
+    impl RngBranch<SipRng> for SipRngBranch {
         fn branch(&self, i: usize) -> SipRng {
             let mut r = self.0.clone();
             r.descend(i as u64);
@@ -229,10 +230,10 @@ pub mod siprng {
     }
 
     impl SplittableRng for SipRng {
-        type Split = SipRngSplit;
+        type Branch = SipRngBranch;
 
-        fn splitn(self) -> SipRngSplit {
-            SipRngSplit(self)
+        fn splitn(self) -> SipRngBranch {
+            SipRngBranch(self)
         }
 
     }
