@@ -25,7 +25,8 @@ pub mod splittable {
 
     //! * The Haskell [`tf-random` library](https://hackage.haskell.org/package/tf-random).
 
-    use rand::Rng;
+    use rand::{Rng, Rand};
+    use std::hash::{Hash, Hasher, SipHasher};
 
     /// A trait for **splittable** pseudo random generators.  These
     /// are genertors that support a "split" operation that produces
@@ -75,6 +76,35 @@ pub mod splittable {
         /// deterministic functions (like Haskell's QuickCheck library
         /// does).
         fn branch(&self, i: usize) -> R;
+    }
+
+
+    /// A type that can be randomly generated using a `SplittableRng`.
+    /// Note that any `Rand` type is trivially also `SplitRand`, but not
+    /// vice-versa.
+    pub trait SplitRand {
+
+        /// Generates a random instance of this type using the
+        /// specified source of randomness.
+        fn rand<R, S>(split: S) -> Self
+            where R: Rng, S: SplitRng<R>;
+    
+    }
+
+    impl<A: Hash, B: Rand> SplitRand for Box<Fn(A) -> B> {
+        fn rand<R, S>(split: S) -> Self 
+            where R: Rng, S: SplitRng<R>, S: 'static
+        {
+            fn hash<T: Hash>(t: &T) -> u64 {
+                let mut s = SipHasher::new();
+                t.hash(&mut s);
+                s.finish()
+            }
+
+            Box::new(move |arg: A| {
+                Rand::rand(&mut split.branch(hash(&arg) as usize))
+            })
+        }        
     }
 
 }
@@ -158,8 +188,7 @@ pub mod siprng {
             self.v3 ^= self.ctr;
             sipround!(self.v0, self.v1, self.v2, self.v3);
             self.v0 ^= self.ctr;
-            self.ctr.wrapping_add(1);
-            // TODO: should we do something here if we hit zero again?
+            self.ctr = self.ctr.wrapping_add(1);
         }
 
         #[inline]
@@ -167,7 +196,7 @@ pub mod siprng {
             self.v3 ^= i;
             sipround!(self.v0, self.v1, self.v2, self.v3);
             self.v0 ^= i;
-            self.len.wrapping_add(1);
+            self.len = self.len.wrapping_add(1);
             self.ctr = 0;
         }
 
@@ -262,10 +291,10 @@ mod tests {
      * crate.
      */
 
-    use rand::{Rng, SeedableRng};
+    use rand::{Rng, SeedableRng, Rand};
     use rand::os::OsRng;
     use siprng::SipRng;
-    use splittable::SplittableRng;
+    use splittable::{SplittableRng, SplitRand};
 
 
     #[test]
@@ -299,6 +328,26 @@ mod tests {
                         rb10.gen_ascii_chars().take(100)));
         assert!(iter_eq(ra11.gen_ascii_chars().take(100),
                         rb11.gen_ascii_chars().take(100)));
+    }
+
+    #[test]
+    fn test_rng_rand_closure() {
+        type F = Box<Fn([u64; 8]) -> [u64; 8]>;
+
+        let seed : (u64, u64) = gen_seed();
+
+        let ra: SipRng = SeedableRng::from_seed(seed);
+        let rb: SipRng = SeedableRng::from_seed(seed);
+        let fa: F = SplitRand::rand(ra.splitn());
+        let fb: F = SplitRand::rand(rb.splitn());
+
+        let mut rc: SipRng = SeedableRng::from_seed(seed);
+        for _ in 0..100 {
+            let x: [u64; 8] = Rand::rand(&mut rc);
+            let ya = fa(x);
+            let yb = fb(x);
+            assert_eq!(ya, yb);
+        }
     }
 
     #[test]
