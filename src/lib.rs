@@ -75,7 +75,7 @@ pub trait SplitRng : Rng + Sized {
     
 }
 
-/// The trait implemented by the branchea of a `SplitRng`.  These
+/// The trait implemented by the branches of a `SplitRng`.  These
 /// objects act as immutable factories for `SplitRng` instances,
 /// accessed by supplying an `usize` index.
 pub trait RngBranch<R> {
