@@ -88,12 +88,12 @@ pub trait RngBranch<R> {
 }
 
 
-/// A type that can be randomly generated using a `SplitRng`.  
+/// A type that can be randomly generated from an `RngBranch`.  
 ///
 /// Note that any `Rand` type can be trivially made `SplitRand` but
 /// not vice-versa.  The reason is that a `SplitRand` type may be one
 /// whose generation needs the additional power afforded by a
-/// `SplitRng`.
+/// `RngBranch` and `SplitRng`.
 ///
 /// The "killer app" for this trait is random generation of
 /// deterministic closures.  Yes, you read that right:
@@ -103,20 +103,22 @@ pub trait RngBranch<R> {
 /// * The generated closures are **random**: the deterministic mapping
 ///   that each one implements is randomly chosen.
 ///
-/// See for example the `Box<Fn(A) -> B>` impl.
+/// This works because an `RngBranch` is a deterministic factory of
+/// `SplitRng`s--it's a function from branch numbers to `SplitRng`s at
+/// their initial states.
 ///
 /// **This feature is experimental, and its API may change.**
 pub trait SplitRand {
     
     /// Generates a random instance of this type using the
     /// specified source of randomness.
-    fn rand<R, S>(split: &S) -> Self
+    fn rand<R, S>(branch: &S) -> Self
         where R: Rng, S: RngBranch<R>, S: Clone;
     
 }
 
 impl<A: Hash, B: Rand> SplitRand for Box<Fn(A) -> B> {
-    fn rand<R, S>(split: &S) -> Self 
+    fn rand<R, S>(branch: &S) -> Self 
         where R: Rng, S: RngBranch<R>, S: Clone, S: 'static
     {
         fn hash<T: Hash>(t: &T) -> u64 {
@@ -125,9 +127,9 @@ impl<A: Hash, B: Rand> SplitRand for Box<Fn(A) -> B> {
             s.finish()
         }
         
-        let split = split.clone();
+        let branch = branch.clone();
         Box::new(move |arg: A| {
-            Rand::rand(&mut split.branch(hash(&arg) as usize))
+            Rand::rand(&mut branch.branch(hash(&arg) as usize))
         })
     }        
 }
