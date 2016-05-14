@@ -7,33 +7,46 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
+//! A crate to support **splittable** random number generators.
+//!
+//! These are genertors that support a "split" operation that produces
+//! two or more "child" generators whose initial state depends on the
+//! source RNG's state, but produce outputs that are uncorrelated to
+//! each other.  This can be useful in some contexts:
+//!
+//! * Functional programs sometimes make good use of splittable RNGs.  The
+//!   Haskell [QuickCheck](https://hackage.haskell.org/package/QuickCheck) 
+//!   library is a notable example that uses a splittable, pure-functional
+//!   PRNG to support random generation of deterministic functions.
+//! * Parallel programs may benefit from a splittable PRNG.  The
+//!   advantage isn't necessarily performance but rather
+//!   **reproducibility**; it makes it easier to guarantee that using
+//!   the same seed yields the same results even if the execution order
+//!   is nondeterministic.
+//!
+//! References:
+//!
+//! * Claessen, Koen and Michał H. Pałka.  2013.  ["Splittable
+//!   Pseudorandom Number Generators using Cryptographic
+//!   Hashing."](http://publications.lib.chalmers.se/records/fulltext/183348/local_183348.pdf)
+//!   *Haskell '13: Proceedings of the 2013 ACM SIGPLAN symposium on
+//!   Haskell*, pp. 47-58.
+//! * Schaathun, Hans Georg.  2015.  ["Evaluation of Splittable
+//!   Pseudo-Random
+//!   Generators."](http://www.hg.schaathun.net/research/Papers/hgs2015jfp.pdf)
+//!   *Journal of Functional Programming*, Vol. 25.
+//! * The Haskell [`tf-random` library](https://hackage.haskell.org/package/tf-random).
+
+
 extern crate rand;
 
 pub mod splittable {
     //! Traits to support splittable random number generators.
-    //!
-    //! References:
-    //!
-    //! * Claessen, Koen and Michał H. Pałka.  2013.  ["Splittable
-    //!   Pseudorandom Number Generators using Cryptographic
-    //!   Hashing."](http://publications.lib.chalmers.se/records/fulltext/183348/local_183348.pdf)
-    //!   *Haskell '13: Proceedings of the 2013 ACM SIGPLAN symposium
-    //!   on Haskell*, pp. 47-58.
-    //! * Schaathun, Hans Georg.  2015.  ["Evaluation of Splittable
-    //!   Pseudo-Random
-    //!   Generators."](http://www.hg.schaathun.net/research/Papers/hgs2015jfp.pdf)
-    //!   *Journal of Functional Programming*, Vol. 25.
-
-    //! * The Haskell [`tf-random` library](https://hackage.haskell.org/package/tf-random).
 
     use rand::{Rng, Rand};
     use std::hash::{Hash, Hasher, SipHasher};
 
-    /// A trait for **splittable** pseudo random generators.  These
-    /// are genertors that support a "split" operation that produces
-    /// two or more "child" generators whose initial state depends on
-    /// the source RNG's state, but produce outputs that are
-    /// uncorrelated to each other.
+    /// A trait for **splittable** pseudo random generators.  
     pub trait SplittableRng : Rng + Sized {
 
         /// The type of "splits" produced off a `SplittableRng`
@@ -48,7 +61,8 @@ pub mod splittable {
         ///
         /// The original generator is moved into this function, and
         /// can then no longer be reused.  This is deliberate; the
-        /// Claessen & Pałka construction requires this.
+        /// Claessen & Pałka splittable RNG construction requires
+        /// this.
         ///
         /// But note that the `Split` object returned from here
         /// supports instantiating the same branch multiple times.
@@ -122,15 +136,14 @@ pub mod splittable {
 }
 
 pub mod siprng {
+    //! A splittable pseudo-random number generator based on the
+    //! SipHash-1-3 function.  **This is not intended to be a
+    //! cryptographically secure PRNG.**
 
     use rand::{Rand, Rng, SeedableRng};
     use splittable::{SplittableRng, SplitRng};
     use std::mem;
 
-    /// A splittable pseudo-random number generator based on the
-    /// SipHash-1-3 function.  **This is not intended to be a
-    /// cryptographically secure PRNG.**
-    ///
     /// This generator is broadly modeled after Claessen and Pałka's,
     /// a version of which is implemented in the Haskell [`tf-random`
     /// library](https://hackage.haskell.org/package/tf-random).
@@ -148,7 +161,6 @@ pub mod siprng {
     ///   Hashing."](http://publications.lib.chalmers.se/records/fulltext/183348/local_183348.pdf)
     ///   *Haskell '13: Proceedings of the 2013 ACM SIGPLAN symposium
     ///   on Haskell*, pp. 47-58.
-    /// * The Haskell [`tf-random` library](https://hackage.haskell.org/package/tf-random).
     #[derive(Clone)]
     pub struct SipRng {
         v0:  u64,
@@ -159,7 +171,7 @@ pub mod siprng {
         len: usize
     }
 
-    /// A "split" of a `SipRng`.
+    /// A split of a `SipRng`.
     #[derive(Clone)]
     pub struct SipRngSplit(SipRng);
 
