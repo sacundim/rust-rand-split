@@ -168,6 +168,7 @@ pub mod siprng {
             sipround!(self.v0, self.v1, self.v2, self.v3);
             self.v0 ^= branch;
             self.len.wrapping_add(1);
+            self.ctr = 0;
         }
 
     }
