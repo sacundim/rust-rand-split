@@ -1,7 +1,7 @@
 #![feature(test)]
 
 extern crate rand;
-extern crate splittable_random as splittable;
+extern crate split_rand;
 extern crate test;
 
 const RAND_BENCH_N: u64 = 1000;
@@ -9,7 +9,7 @@ const RAND_BENCH_N: u64 = 1000;
 use std::mem::size_of;
 use test::{black_box, Bencher};
 use rand::{Rng, OsRng};
-use splittable::siprng::SipRng;
+use split_rand::siprng::SipRng;
 
 #[bench]
 fn rand_siprng(b: &mut Bencher) {
