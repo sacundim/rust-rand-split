@@ -26,7 +26,6 @@ use std::mem;
 
 
 /// A splittable pseudorandom generator based on SipHash.
-#[derive(Clone)]
 pub struct SipRng {
     v0:  u64,
     v1:  u64,
@@ -37,7 +36,6 @@ pub struct SipRng {
 }
 
 /// A PRF taken off a `SipRng`.
-#[derive(Clone)]
 pub struct SipPrf(SipRng);
 
 
@@ -73,6 +71,17 @@ impl SipRng {
         }
     }
 
+    fn clone(&self) -> SipRng {
+        SipRng { 
+            v0:  self.v0,
+            v1:  self.v1,
+            v2:  self.v2,
+            v3:  self.v3,
+            ctr: self.ctr,
+            len: self.len
+        }
+    }
+
     #[inline]
     fn advance(&mut self) {
         self.v3 ^= self.ctr;
@@ -103,8 +112,16 @@ impl SplitPrf<SipRng> for SipPrf {
 impl SplitRng for SipRng {
     type Prf = SipPrf;
 
-    fn splitn(self) -> SipPrf {
-        SipPrf(self)
+    fn split(&mut self) -> Self {
+        let mut child = self.clone();
+        self.descend(0);
+        child.descend(1);
+        child
+    }
+
+    fn splitn(&mut self) -> SipPrf {
+        let child = self.split();
+        SipPrf(child)
     }
 
 }
@@ -186,49 +203,35 @@ mod tests {
 
     #[test]
     fn test_rng_rand_split() {
-        let seed : (u64, u64) = gen_seed();
+        let (k0, k1) = gen_seed();
 
-        let mut ra: SipRng = SeedableRng::from_seed(seed);
-        let mut rb: SipRng = SeedableRng::from_seed(seed);
+        let mut ra0 = SipRng::new(k0, k1);
+        let mut rb0 = SipRng::new(k0, k1);
 
-        assert!(iter_eq(ra.gen_ascii_chars().take(100),
-                        rb.gen_ascii_chars().take(100)));
+        assert!(iter_eq(ra0.gen_ascii_chars().take(100),
+                        rb0.gen_ascii_chars().take(100)));
         
-        let (mut ra0, mut ra1) = ra.split();
-        let (mut rb0, mut rb1) = rb.split();
+        let mut ra1 = ra0.split();
+        let mut rb1 = rb0.split();
 
         assert!(iter_eq(ra0.gen_ascii_chars().take(100),
                         rb0.gen_ascii_chars().take(100)));
         assert!(iter_eq(ra1.gen_ascii_chars().take(100),
                         rb1.gen_ascii_chars().take(100)));
-
-        let (mut ra00, mut ra01) = ra0.split();
-        let (mut ra10, mut ra11) = ra1.split();
-        let (mut rb00, mut rb01) = rb0.split();
-        let (mut rb10, mut rb11) = rb1.split();
-
-        assert!(iter_eq(ra00.gen_ascii_chars().take(100),
-                        rb00.gen_ascii_chars().take(100)));
-        assert!(iter_eq(ra01.gen_ascii_chars().take(100),
-                        rb01.gen_ascii_chars().take(100)));
-        assert!(iter_eq(ra10.gen_ascii_chars().take(100),
-                        rb10.gen_ascii_chars().take(100)));
-        assert!(iter_eq(ra11.gen_ascii_chars().take(100),
-                        rb11.gen_ascii_chars().take(100)));
     }
 
     #[test]
     fn test_rng_rand_closure() {
         type F = Box<Fn([u64; 8]) -> [u64; 8]>;
 
-        let seed : (u64, u64) = gen_seed();
+        let (k0, k1) = gen_seed();
 
-        let ra: SipRng = SeedableRng::from_seed(seed);
-        let rb: SipRng = SeedableRng::from_seed(seed);
-        let fa: F = SplitRand::rand(ra);
-        let fb: F = SplitRand::rand(rb);
+        let mut ra = SipRng::new(k0, k1);
+        let mut rb = SipRng::new(k0, k1);
+        let fa: F = SplitRand::split_rand(&mut ra);
+        let fb: F = SplitRand::split_rand(&mut rb);
 
-        let mut rc: SipRng = SeedableRng::from_seed(seed);
+        let mut rc = SipRng::new(k1, k0);
         for _ in 0..100 {
             let x: [u64; 8] = Rand::rand(&mut rc);
             let ya = fa(x);
@@ -239,20 +242,18 @@ mod tests {
 
     #[test]
     fn test_rng_rand_seeded() {
-        let seed : (u64, u64) = gen_seed();
-
-        let mut ra: SipRng = SeedableRng::from_seed(seed);
-        let mut rb: SipRng = SeedableRng::from_seed(seed);
-
+        let (k0, k1) = gen_seed();
+        let mut ra = SipRng::new(k0, k1);
+        let mut rb = SipRng::new(k0, k1);
         assert!(iter_eq(ra.gen_ascii_chars().take(100),
                         rb.gen_ascii_chars().take(100)));
     }
 
     #[test]
     fn test_rng_seeded() {
-        let seed : (u64, u64) = gen_seed();
-        let mut ra: SipRng = SeedableRng::from_seed(seed);
-        let mut rb: SipRng = SeedableRng::from_seed(seed);
+        let (k0, k1) = gen_seed();
+        let mut ra = SipRng::new(k0, k1);
+        let mut rb = SipRng::new(k0, k1);
         assert!(iter_eq(ra.gen_ascii_chars().take(100),
                         rb.gen_ascii_chars().take(100)));
     }

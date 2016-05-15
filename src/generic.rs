@@ -14,14 +14,14 @@ use std::marker::PhantomData;
 
 /// Wrapper that turns a `SplitRng` `S` and an `Rng` `R` into a `SplitRng`.
 pub struct Split<S, R> {
-    splitter: S,
-    sequential: R
+    rng: S,
+    seq: R
 }
 
 /// The PRF type that corresponds to `Split`.
 pub struct Prf<F, R> {
     prf: F,
-    sequential: PhantomData<R>
+    seq: PhantomData<R>
 }
 
 
@@ -29,27 +29,27 @@ impl<S: SplitRng, R: Rng> Rng for Split<S, R> {
 
     #[inline(always)]
     fn next_u32(&mut self) -> u32 {
-        self.sequential.next_u32()
+        self.seq.next_u32()
     }
 
     #[inline(always)]
     fn next_u64(&mut self) -> u64 {
-        self.sequential.next_u64()
+        self.seq.next_u64()
     }
 
     #[inline(always)]
     fn next_f32(&mut self) -> f32 {
-        self.sequential.next_f32()
+        self.seq.next_f32()
     }
 
     #[inline(always)]
     fn next_f64(&mut self) -> f64 {
-        self.sequential.next_f64()
+        self.seq.next_f64()
     }
 
     #[inline(always)]
     fn fill_bytes(&mut self, dest: &mut [u8]) {
-        self.sequential.fill_bytes(dest);        
+        self.seq.fill_bytes(dest);        
     }
 
 }
@@ -59,16 +59,16 @@ impl<S, SeedS, R> SeedableRng<SeedS> for Split<S, R>
           R: Rng + Rand
 {
     fn reseed(&mut self, seed: SeedS) {
-        self.splitter.reseed(seed);
-        self.sequential = self.splitter.gen();
+        self.rng.reseed(seed);
+        self.seq = self.rng.gen();
     }
 
     fn from_seed(seed: SeedS) -> Self {
-        let mut splitter = S::from_seed(seed);
-        let sequential = splitter.gen();
+        let mut rng = S::from_seed(seed);
+        let seq = rng.gen();
         Split {
-            splitter: splitter, 
-            sequential: sequential
+            rng: rng, 
+            seq: seq
         }
     }
 }
@@ -80,10 +80,19 @@ impl<S, R> SplitRng for Split<S, R>
 {
     type Prf = Prf<S::Prf, R>;
     
-    fn splitn(self) -> Self::Prf {
+    fn split(&mut self) -> Self {
+        let mut rng = self.rng.split();
+        let seq = rng.gen();
+        Split {
+            rng: rng,
+            seq: seq
+        }
+    }
+
+    fn splitn(&mut self) -> Self::Prf {
         Prf {
-            prf: self.splitter.splitn(),
-            sequential: PhantomData
+            prf: self.rng.splitn(),
+            seq: PhantomData
         }
     }
 }
@@ -94,23 +103,23 @@ impl<S, F, R> SplitPrf<Split<S, R>> for Prf<F, R>
           R: Rand
 {
     fn call(&self, i: u64) -> Split<S, R> {
-        let mut splitter = self.prf.call(i);
-        let sequential = splitter.gen();
+        let mut rng = self.prf.call(i);
+        let seq = rng.gen();
         Split {
-            splitter: splitter,
-            sequential: sequential
+            rng: rng,
+            seq: seq
         }
     }
     
 }
 
 impl<S: Rng + Rand, R: Rand> Rand for Split<S, R> {
-    fn rand<G: Rng>(rng: &mut G) -> Self {
-        let mut splitter: S = rng.gen();
-        let sequential: R = splitter.gen();
+    fn rand<G: Rng>(other: &mut G) -> Self {
+        let mut rng: S = other.gen();
+        let seq: R = rng.gen();
         Split {
-            splitter: splitter,
-            sequential: sequential
+            rng: rng,
+            seq: seq
         }
     }
 }
