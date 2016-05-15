@@ -40,10 +40,13 @@
 
 extern crate rand;
 
+pub mod generic;
 pub mod siprng;
 
 use rand::{Rng, Rand};
+use siprng::{SipRng, SipRngBranch};
 use std::hash::{Hash, Hasher, SipHasher};
+
 
 /// A trait for **splittable** pseudo random generators.  
 pub trait SplitRng : Rng + Sized {
@@ -134,4 +137,8 @@ impl<A: Hash, B: Rand> SplitRand for Box<Fn(A) -> B> {
 
 }
 
+/// A wrapper that generically adds splittability to RNGs.
+pub type Split<R> = generic::Split<SipRng, R>;
 
+/// A branch of a generic `Split` RNG.
+pub type Branch<R> = generic::Branch<SipRngBranch, R>;
