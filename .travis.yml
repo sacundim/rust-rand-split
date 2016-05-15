@@ -3,7 +3,7 @@ rust:
   - 1.8.0
   - stable
   - beta
-  - nightly 
+  - nightly
 matrix:
   allow_failures:
     - rust: nightly
@@ -11,5 +11,8 @@ sudo: false
 script:
   - cargo build --verbose
   - cargo test --verbose
-  - [ $TRAVIS_RUST_VERSION != nightly ] || cargo bench
+  - |
+    [ $TRAVIS_RUST_VERSION != nightly ] || (
+      cargo bench
+    )
   - cargo doc
