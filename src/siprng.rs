@@ -220,6 +220,34 @@ mod tests {
                         rb1.gen_ascii_chars().take(100)));
     }
 
+    /// When generating a pair with `SplitRand`, the value generated
+    /// at each position in the pair should not be affected by how
+    /// much randomness was consumed by the generation of the other.
+    #[test]
+    fn test_rng_rand_independence() {
+        const S1: usize = 16;
+        const S2: usize = 32;
+
+        let (k0, k1) = gen_seed();
+        let mut ra = SipRng::new(k0, k1);
+        let mut rb = SipRng::new(k0, k1);
+        let mut rc = SipRng::new(k0, k1);
+        let mut rd = SipRng::new(k0, k1);
+
+        for _ in 0..100 {
+            let (a0, a1): ([u64; S1], [u64; S1]) = ra.split_gen();
+            let (b0, b1): ([u64; S1], [u64; S2]) = rb.split_gen();
+            let (c0, c1): ([u64; S2], [u64; S1]) = rc.split_gen();
+            let (d0, d1): ([u64; S2], [u64; S2]) = rd.split_gen();
+            
+            assert_eq!(a0, b0);
+            assert_eq!(a1, c1);
+            assert_eq!(b1, d1);
+            assert_eq!(c0, d0);
+        }
+    }
+
+    /// Test generation of closures.
     #[test]
     fn test_rng_rand_closure() {
         type F = Box<Fn([u64; 8]) -> [u64; 8]>;
