@@ -74,8 +74,8 @@ pub fn test_split_rand_independence<R: SplitRng>(rng: &mut R) {
 
     for _ in 0..100 {
         // Now we use our four initially-identical RNGs to
-        // generate tuples representing all four the combinations
-        // of our two element types:
+        // generate tuples representing all four combinations of
+        // our two element types:
         let (a0, a1): (T0, T0) = SplitRand::split_rand(&mut ra);
         let (b0, b1): (T0, T1) = SplitRand::split_rand(&mut rb);
         let (c0, c1): (T1, T0) = SplitRand::split_rand(&mut rc);
