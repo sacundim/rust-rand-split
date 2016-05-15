@@ -109,7 +109,6 @@ impl SplitRng for SipRng {
 
 }
 
-
 impl Rng for SipRng {
     #[inline]
     fn next_u64(&mut self) -> u64 {
