@@ -190,161 +190,54 @@ impl Rand for SipRng {
 
 #[cfg(test)]
 mod tests {
-    /*
-     * I have shamelessly lifted a lot of these tests from the `rand`
-     * crate.
-     */
-
-    use rand::{Rng, SeedableRng, Rand};
+    use rand::Rng;
     use rand::os::OsRng;
     use siprng::SipRng;
-    use ::{SplitRng, SplitRand};
 
 
-    /// When generating a pair with `SplitRand`, the value generated
-    /// at each position in the pair should not be affected by how
-    /// much randomness was consumed by the generation of the other.
-    #[test]
-    fn test_split_rand_independence() {
-        // Seed four `SipRng`s with the same initial state.
-        let (k0, k1) = gen_seed();
-        let mut ra = SipRng::new(k0, k1);
-        let mut rb = SipRng::new(k0, k1);
-        let mut rc = SipRng::new(k0, k1);
-        let mut rd = SipRng::new(k0, k1);
-
-        type T0 = [u64; 16];
-        type T1 = [u64; 32];
-        for _ in 0..100 {
-            // Generate four pairs of arrays, each with one of the
-            // `SipRng`s.  The arrays are generated in two different
-            // lengths, and the four pairs represent all four
-            // combinations of the two lengths.
-            let (a0, a1): (T0, T0) = SplitRand::split_rand(&mut ra);
-            let (b0, b1): (T0, T1) = SplitRand::split_rand(&mut rb);
-            let (c0, c1): (T1, T0) = SplitRand::split_rand(&mut rc);
-            let (d0, d1): (T1, T1) = SplitRand::split_rand(&mut rd);
-            
-            // Now we show that, given the same initial state, the
-            // content of each element of the pair depends only on its
-            // position and type, and not what is generated for the
-            // other element.
-            assert_eq!(a0, b0);
-            assert_eq!(a1, c1);
-            assert_eq!(b1, d1);
-            assert_eq!(c0, d0);
-
-            // And note that we're doing this inside of a for loop,
-            // and reusing the same four generators.  So for
-            // subsequent iterations to succeed, all four generators
-            // must end in the same state.
-        }
+    fn gen_siprng() -> SipRng {
+        let mut osrng = OsRng::new().ok().expect("Could not create OsRng");
+        osrng.gen()
     }
 
-    /// Test generation of closures.
+
+    #[test]
+    fn test_split_rand_independence() {
+        ::tests::test_split_rand_independence(&mut gen_siprng());
+    }
+
     #[test]
     fn test_split_rand_closure() {
-        type F = Box<Fn([u64; 8]) -> [u64; 8]>;
-
-        let (k0, k1) = gen_seed();
-
-        let mut ra = SipRng::new(k0, k1);
-        let mut rb = SipRng::new(k0, k1);
-        let fa: F = SplitRand::split_rand(&mut ra);
-        let fb: F = SplitRand::split_rand(&mut rb);
-
-        let mut rc = SipRng::new(k1, k0);
-        for _ in 0..100 {
-            let x: [u64; 8] = Rand::rand(&mut rc);
-            let ya = fa(x);
-            let yb = fb(x);
-            assert_eq!(ya, yb);
-        }
+        ::tests::test_split_rand_closure(&mut gen_siprng());
     }
 
     #[test]
     fn test_split_rand_split() {
-        let (k0, k1) = gen_seed();
-
-        let mut ra0 = SipRng::new(k0, k1);
-        let mut rb0 = SipRng::new(k0, k1);
-
-        assert!(iter_eq(ra0.gen_ascii_chars().take(100),
-                        rb0.gen_ascii_chars().take(100)));
-        
-        let mut ra1 = ra0.split();
-        let mut rb1 = rb0.split();
-
-        assert!(iter_eq(ra0.gen_ascii_chars().take(100),
-                        rb0.gen_ascii_chars().take(100)));
-        assert!(iter_eq(ra1.gen_ascii_chars().take(100),
-                        rb1.gen_ascii_chars().take(100)));
+        ::tests::test_split_rand_split(&mut gen_siprng());
     }
 
-
-    #[test]
-    fn test_rng_rand_seeded() {
-        let (k0, k1) = gen_seed();
-        let mut ra = SipRng::new(k0, k1);
-        let mut rb = SipRng::new(k0, k1);
-        assert!(iter_eq(ra.gen_ascii_chars().take(100),
-                        rb.gen_ascii_chars().take(100)));
-    }
-
-    #[test]
-    fn test_rng_seeded() {
-        let (k0, k1) = gen_seed();
-        let mut ra = SipRng::new(k0, k1);
-        let mut rb = SipRng::new(k0, k1);
-        assert!(iter_eq(ra.gen_ascii_chars().take(100),
-                        rb.gen_ascii_chars().take(100)));
-    }
-
-    #[test]
-    fn test_rng_reseed() {
-        let seed : (u64, u64) = (1234567890, 987654321);
-        let mut r: SipRng = SeedableRng::from_seed(seed);
-        let string1: String = r.gen_ascii_chars().take(100).collect();
-
-        r.reseed(seed);
-
-        let string2: String = r.gen_ascii_chars().take(100).collect();
-        assert_eq!(string1, string2);
-    }
-
-    #[test]
-    fn test_rng_clone() {
-        let seed : (u64, u64) = (0, 0);
-        let mut rng: SipRng = SeedableRng::from_seed(seed);
-        let mut clone = rng.clone();
-        for _ in 0..16 {
-            assert_eq!(rng.next_u64(), clone.next_u64());
-        }
-    }
-
-    /*
-     * Utility functions
-     */
 
     fn gen_seed() -> (u64, u64) {
         let mut osrng = OsRng::new().ok().expect("Could not create OsRng");
         osrng.gen()
     }
 
-    fn iter_eq<I, J>(i: I, j: J) -> bool
-        where I: IntoIterator,
-              J: IntoIterator<Item=I::Item>,
-              I::Item: Eq
-    {
-        // make sure the iterators have equal length
-        let mut i = i.into_iter();
-        let mut j = j.into_iter();
-        loop {
-            match (i.next(), j.next()) {
-                (Some(ref ei), Some(ref ej)) if ei == ej => { }
-                (None, None) => return true,
-                _ => return false,
-            }
-        }
+    #[test]
+    fn test_rng_rand_seeded() {
+        let seed = gen_seed();
+        ::tests::test_rng_rand_seeded::<SipRng, (u64, u64)>(seed);
     }
+
+    #[test]
+    fn test_rng_seeded() {
+        let seed = gen_seed();
+        ::tests::test_rng_seeded::<SipRng, (u64, u64)>(seed);
+    }
+
+    #[test]
+    fn test_rng_reseed() {
+        let seed = gen_seed();
+        ::tests::test_rng_reseed::<SipRng, (u64, u64)>(seed);
+    }
+
 }

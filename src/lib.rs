@@ -233,3 +233,170 @@ array_impl!{
     T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, 
     T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T,
 }
+
+
+#[cfg(test)]
+mod tests {
+    //! These tests are reusable functions meant to be called from
+    //! children modules.
+
+    use rand::SeedableRng;
+    use ::{SplitRng, SplitPrf, SplitRand};
+
+
+    /// When generating a pair with `SplitRand`, the value generated
+    /// at each position in the pair should not be affected by how
+    /// much randomness was consumed by the generation of the other.
+    pub fn test_split_rand_independence<R: SplitRng>(rng: &mut R) {
+        // First we split off a **pseudo-random function** ("PRF")
+        // from the RNG, which implements the `SplitPrf` trait.  A
+        // PRF, in this context, is a factory that constructs further
+        // `SplitRng`s.
+        let prf: R::Prf = rng.splitn();
+
+        // Now we pick a random index, and call the PRF four times
+        // with that index.
+        let i: u64 = rng.next_u64();
+        let mut ra: R = prf.call(i);
+        let mut rb: R = prf.call(i);
+        let mut rc: R = prf.call(i);
+        let mut rd: R = prf.call(i);
+
+        // A PRF is a deterministic function from the index into fresh
+        // RNG instances.  So the four RNGs we just constructed are
+        // guaranteed to be in the same initial state.  (Note that this
+        // can be used to randomly generate pure functions!)
+        assert!(iter_eq(ra.gen_ascii_chars().take(100),
+                        rb.gen_ascii_chars().take(100)));
+        assert!(iter_eq(rc.gen_ascii_chars().take(100),
+                        rd.gen_ascii_chars().take(100)));
+        assert!(iter_eq(ra.gen_ascii_chars().take(100),
+                        rc.gen_ascii_chars().take(100)));
+        assert!(iter_eq(rb.gen_ascii_chars().take(100),
+                        rd.gen_ascii_chars().take(100)));
+
+
+        // We pick two distinct types that implement the `SplitRand`
+        // trait.  We choose them so that generating a value of each
+        // type advances the state of a sequential RNG by a different
+        // amount than the other.
+        type T0 = [u64; 16];
+        type T1 = [u64; 32];
+
+        for _ in 0..100 {
+            // Now we use our four initially-identical RNGs to
+            // generate tuples representing all four the combinations
+            // of our two element types:
+            let (a0, a1): (T0, T0) = SplitRand::split_rand(&mut ra);
+            let (b0, b1): (T0, T1) = SplitRand::split_rand(&mut rb);
+            let (c0, c1): (T1, T0) = SplitRand::split_rand(&mut rc);
+            let (d0, d1): (T1, T1) = SplitRand::split_rand(&mut rd);
+            
+            // And here we test that the value of each element
+            // generated depends on its type and its position within
+            // its pair, but not on what was generated for the other
+            // element.
+            assert_eq!(a0, b0);
+            assert_eq!(a1, c1);
+            assert_eq!(b1, d1);
+            assert_eq!(c0, d0);
+
+            // Finally, note that we're doing this inside of a loop
+            // and reusing the same four generators for each
+            // iteration.  So at this point all four generators must
+            // be in the same state for subsequent iterations to pass.
+        }
+    }
+
+    /// Test generation of closures.
+    pub fn test_split_rand_closure<R: SplitRng>(rng: &mut R) {
+        type F = Box<Fn([u64; 8]) -> [u64; 8]>;
+
+        let prf = rng.splitn();
+        let i = rng.next_u64();
+
+        let fa: F = SplitRand::split_rand(&mut prf.call(i));
+        let fb: F = SplitRand::split_rand(&mut prf.call(i));
+        for _ in 0..100 {
+            let x: [u64; 8] = SplitRand::split_rand(rng);
+            let ya = fa(x);
+            let yb = fb(x);
+            assert_eq!(ya, yb);
+        }
+    }
+
+
+    /// Test that splitting a generator produces reproducible
+    /// sequential results.
+    pub fn test_split_rand_split<R: SplitRng>(rng: &mut R) {
+        let prf = rng.splitn();
+        let i = rng.next_u64();
+        let mut ra0 = prf.call(i);
+        let mut rb0 = prf.call(i);
+
+        assert!(iter_eq(ra0.gen_ascii_chars().take(100),
+                        rb0.gen_ascii_chars().take(100)));
+        
+        let mut ra1 = ra0.split();
+        let mut rb1 = rb0.split();
+
+        assert!(iter_eq(ra0.gen_ascii_chars().take(100),
+                        rb0.gen_ascii_chars().take(100)));
+        assert!(iter_eq(ra1.gen_ascii_chars().take(100),
+                        rb1.gen_ascii_chars().take(100)));
+    }
+
+
+    /*
+     * The tests below here are lightly adapted from the `rand` crate.
+     */
+
+    pub fn test_rng_rand_seeded<R, Seed>(seed: Seed) 
+        where R: SplitRng + SeedableRng<Seed>, Seed: Copy
+    {
+        let mut ra = R::from_seed(seed);
+        let mut rb = R::from_seed(seed);
+        assert!(iter_eq(ra.gen_ascii_chars().take(100),
+                        rb.gen_ascii_chars().take(100)));
+    }
+
+    pub fn test_rng_seeded<R, Seed>(seed: Seed) 
+        where R: SplitRng + SeedableRng<Seed>, Seed: Copy
+    {
+        let mut ra = R::from_seed(seed);
+        let mut rb = R::from_seed(seed);
+        assert!(iter_eq(ra.gen_ascii_chars().take(100),
+                        rb.gen_ascii_chars().take(100)));
+    }
+
+    pub fn test_rng_reseed<R, Seed>(seed: Seed) 
+        where R: SplitRng + SeedableRng<Seed>, Seed: Copy
+    {
+        let mut r = R::from_seed(seed);
+        let string1: String = r.gen_ascii_chars().take(100).collect();
+
+        r.reseed(seed);
+
+        let string2: String = r.gen_ascii_chars().take(100).collect();
+        assert_eq!(string1, string2);
+    }
+
+
+    fn iter_eq<I, J>(i: I, j: J) -> bool
+        where I: IntoIterator,
+              J: IntoIterator<Item=I::Item>,
+              I::Item: Eq
+    {
+        // make sure the iterators have equal length
+        let mut i = i.into_iter();
+        let mut j = j.into_iter();
+        loop {
+            match (i.next(), j.next()) {
+                (Some(ref ei), Some(ref ej)) if ei == ej => { }
+                (None, None) => return true,
+                _ => return false,
+            }
+        }
+    }
+
+}

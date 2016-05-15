@@ -123,3 +123,33 @@ impl<S: Rng + Rand, R: Rand> Rand for Split<S, R> {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use rand::{Rng, XorShiftRng};
+    use rand::os::OsRng;
+    use siprng::SipRng;
+    use super::Split;
+
+
+    fn gen_generic_rng() -> Split<SipRng, XorShiftRng> {
+        let mut osrng = OsRng::new().ok().expect("Could not create OsRng");
+        osrng.gen()
+    }
+
+    #[test]
+    fn test_split_rand_independence() {
+        ::tests::test_split_rand_independence(&mut gen_generic_rng());
+    }
+
+    #[test]
+    fn test_split_rand_closure() {
+        ::tests::test_split_rand_closure(&mut gen_generic_rng());
+    }
+
+    #[test]
+    fn test_split_rand_split() {
+        ::tests::test_split_rand_split(&mut gen_generic_rng());
+    }
+
+}
