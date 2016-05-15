@@ -1,5 +1,7 @@
 # Splittable Pseudorandom Number Generation for Rust
 
+[![Build Status](https://travis-ci.org/sacundim/rust-rand-split.svg?branch=master)](https://travis-ci.org/sacundim/rust-rand-split)
+
 This crate provides traits for **splittable** pseudorandom number
 generators, and a simple implementation based on SipHash.
 
