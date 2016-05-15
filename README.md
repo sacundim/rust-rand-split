@@ -26,11 +26,49 @@ Now, if the logic that generates the `a` value changes, then states
 means that the value generated for `b` may also change.
 
 With a splittable PRNG, you can generate the tuple's elements with
-**independent** PRNGs, so that the logic for generating `a` cannot
-affect that for generating `b`:
+**independent** PRNGs split off the parent, so that changes to the
+logic that generates one element cannot affect the other.  This can be
+illustrated with one of our unit tests:
 
-    let rng = new_splittable_rng();
-    let (a, b) = SplitRand::rand(rng);
+    /// When generating a pair with `SplitRand`, the value generated
+    /// at each position in the pair should not be affected by how
+    /// much randomness was consumed by the generation of the other.
+    #[test]
+    fn test_split_rand_independence() {
+        // Seed four `SipRng`s with the same initial state.
+        let (k0, k1) = gen_seed();
+        let mut ra = SipRng::new(k0, k1);
+        let mut rb = SipRng::new(k0, k1);
+        let mut rc = SipRng::new(k0, k1);
+        let mut rd = SipRng::new(k0, k1);
+
+        type T0 = [u64; 16];
+        type T1 = [u64; 32];
+        for _ in 0..100 {
+            // Generate four pairs of arrays, each with one of the
+            // `SipRng`s.  The arrays are generated in two different
+            // lengths, and the four pairs represent all four
+            // combinations of the two lengths.
+            let (a0, a1): (T0, T0) = SplitRand::split_rand(&mut ra);
+            let (b0, b1): (T0, T1) = SplitRand::split_rand(&mut rb);
+            let (c0, c1): (T1, T0) = SplitRand::split_rand(&mut rc);
+            let (d0, d1): (T1, T1) = SplitRand::split_rand(&mut rd);
+            
+            // Now we show that, given the same initial state, the
+            // content of each element of the pair depends only on its
+            // position and type, and not what is generated for the
+            // other element.
+            assert_eq!(a0, b0);
+            assert_eq!(a1, c1);
+            assert_eq!(b1, d1);
+            assert_eq!(c0, d0);
+
+            // And note that we're doing this inside of a for loop,
+            // and reusing the same four generators.  So for
+            // subsequent iterations to succeed, all four generators
+            // must end in the same state.
+        }
+    }
 
 This can be useful in programs that generate complex pseudo-random
 data from fixed seeds, because it means that changes in one location
