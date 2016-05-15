@@ -8,7 +8,7 @@
 //! assume that the composition of two secure PRNGs is also secure**.
 
 use rand::{Rng, SeedableRng, Rand};
-use super::{SplitRng, RngBranch};
+use super::{SplitRng, SplitPrf};
 use std::marker::PhantomData;
 
 
@@ -18,9 +18,9 @@ pub struct Split<S, R> {
     sequential: R
 }
 
-/// A branch of a `Split`.
-pub struct Branch<S, R> {
-    branch: S,
+/// The PRF type that corresponds to `Split`.
+pub struct Prf<F, R> {
+    prf: F,
     sequential: PhantomData<R>
 }
 
@@ -78,23 +78,23 @@ impl<S, R> SplitRng for Split<S, R>
     where S: SplitRng,
           R: Rng + Rand
 {
-    type Branch = Branch<S::Branch, R>;
+    type Prf = Prf<S::Prf, R>;
     
-    fn splitn(self) -> Self::Branch {
-        Branch {
-            branch: self.splitter.splitn(),
+    fn splitn(self) -> Self::Prf {
+        Prf {
+            prf: self.splitter.splitn(),
             sequential: PhantomData
         }
     }
 }
 
-impl<S, B, R> RngBranch<Split<S, R>> for Branch<B, R> 
+impl<S, F, R> SplitPrf<Split<S, R>> for Prf<F, R> 
     where S: SplitRng,
-          B: RngBranch<S>,
+          F: SplitPrf<S>,
           R: Rand
 {
-    fn branch(&self, i: usize) -> Split<S, R> {
-        let mut splitter = self.branch.branch(i);
+    fn call(&self, i: u64) -> Split<S, R> {
+        let mut splitter = self.prf.call(i);
         let sequential = splitter.gen();
         Split {
             splitter: splitter,

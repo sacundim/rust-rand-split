@@ -21,7 +21,7 @@
 //!   Haskell*, pp. 47-58.
 
 use rand::{Rand, Rng, SeedableRng};
-use super::{SplitRng, RngBranch};
+use super::{SplitRng, SplitPrf};
 use std::mem;
 
 
@@ -36,9 +36,9 @@ pub struct SipRng {
     len: usize
 }
 
-/// A branched `SipRng`.
+/// A PRF taken off a `SipRng`.
 #[derive(Clone)]
-pub struct SipRngBranch(SipRng);
+pub struct SipPrf(SipRng);
 
 
 macro_rules! sipround {
@@ -92,8 +92,8 @@ impl SipRng {
 
 }
 
-impl RngBranch<SipRng> for SipRngBranch {
-    fn branch(&self, i: usize) -> SipRng {
+impl SplitPrf<SipRng> for SipPrf {
+    fn call(&self, i: u64) -> SipRng {
         let mut r = self.0.clone();
         r.descend(i as u64);
         r
@@ -101,10 +101,10 @@ impl RngBranch<SipRng> for SipRngBranch {
 }
 
 impl SplitRng for SipRng {
-    type Branch = SipRngBranch;
+    type Prf = SipPrf;
 
-    fn splitn(self) -> SipRngBranch {
-        SipRngBranch(self)
+    fn splitn(self) -> SipPrf {
+        SipPrf(self)
     }
 
 }
