@@ -137,6 +137,9 @@
 //!     assert_eq!(a1, c1);
 //!     assert_eq!(b1, d1);
 //!     assert_eq!(c0, d0);
+//!     assert!(a0 != a1);
+//!     assert!(a0 != c1);
+//!     assert!(d0 != d1);
 //! 
 //!     // Finally, note that we're doing this inside of a loop
 //!     // and reusing the same four RNGs on each iteration.  So 
@@ -424,6 +427,9 @@ mod tests {
             assert_eq!(a1, c1);
             assert_eq!(b1, d1);
             assert_eq!(c0, d0);
+            assert!(a0 != a1);
+            assert!(a0 != c1);
+            assert!(d0 != d1);
         }
     }
 
