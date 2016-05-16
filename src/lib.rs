@@ -283,15 +283,13 @@ impl<A: Hash, B: Rand> SplitRand for Box<Fn(A) -> B> {
     fn split_rand<R>(rng: &mut R) -> Self 
         where R: SplitRng, R: 'static
     {
-        fn hash<T: Hash>(t: &T) -> u64 {
-            let mut s = SipHasher::new();
-            t.hash(&mut s);
-            s.finish()
-        }
-        
+        let (k0, k1) = (rng.next_u64(), rng.next_u64());
         let prf = rng.splitn();
         Box::new(move |arg: A| {
-            Rand::rand(&mut prf.call(hash(&arg)))
+            // TODO: is there a way not to hardcode `SipHasher` here?
+            let mut hasher = SipHasher::new_with_keys(k0, k1);
+            arg.hash(&mut hasher);
+            Rand::rand(&mut prf.call(hasher.finish()))
         })
     }
 
