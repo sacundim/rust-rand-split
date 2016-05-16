@@ -286,6 +286,9 @@
 <span id="242">242</span>
 <span id="243">243</span>
 <span id="244">244</span>
+<span id="245">245</span>
+<span id="246">246</span>
+<span id="247">247</span>
 </pre><pre class='rust '>
 <span class='doccomment'>//! A splittable pseudo-random number generator based on the</span>
 <span class='doccomment'>//! SipHash function.  **This is not intended to be a</span>
@@ -378,6 +381,9 @@
         <span class='macro'>sipround</span><span class='macro'>!</span>(<span class='self'>self</span>.<span class='ident'>v0</span>, <span class='self'>self</span>.<span class='ident'>v1</span>, <span class='self'>self</span>.<span class='ident'>v2</span>, <span class='self'>self</span>.<span class='ident'>v3</span>);
         <span class='self'>self</span>.<span class='ident'>v0</span> <span class='op'>^=</span> <span class='self'>self</span>.<span class='ident'>ctr</span>;
         <span class='self'>self</span>.<span class='ident'>ctr</span> <span class='op'>=</span> <span class='self'>self</span>.<span class='ident'>ctr</span>.<span class='ident'>wrapping_add</span>(<span class='number'>1</span>);
+        <span class='kw'>if</span> <span class='self'>self</span>.<span class='ident'>ctr</span> <span class='op'>==</span> <span class='number'>0</span> {
+            <span class='self'>self</span>.<span class='ident'>descend</span>(<span class='number'>0</span>);
+        }
     }
 
     <span class='attribute'>#[<span class='ident'>inline</span>]</span>
