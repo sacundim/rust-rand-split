@@ -33,9 +33,24 @@
 //! pair of `Rand` instances with a conventional, i.e. **sequential**
 //! PRNG:
 //! 
-//! ```ignore
-//! let mut rng = new_sequential_rng();
-//! let (a, b): (T1, T2) = Rand::rand(rng);
+//! ```should_panic
+//! extern crate rand;
+//! use rand::{Rng, SeedableRng, XorShiftRng, Rand, thread_rng};
+//!
+//! # fn main() {
+//! // Make two PRNGs from the same seed.
+//! let seed: [u32; 4] = thread_rng().gen();
+//! let mut rng0: XorShiftRng = SeedableRng::from_seed(seed);
+//! let mut rng1: XorShiftRng = SeedableRng::from_seed(seed);
+//! 
+//! type T0 = [u64; 16];
+//! type T1 = [u64; 32];
+//! let (_, a): (T0, T0) = Rand::rand(&mut rng0);
+//! let (_, b): (T1, T0) = Rand::rand(&mut rng1);
+//!
+//! // This should fail, unless you're crazy unlucky:
+//! assert_eq!(a, b); 
+//! # }
 //! ```
 //! 
 //! With a sequential generator, the way this is generated typically
@@ -61,78 +76,75 @@
 //! extern crate rand;
 //! extern crate rand_split;
 //!
-//! use rand::Rng;
-//! use rand::os::OsRng;
+//! use rand::{Rng, thread_rng};
 //! use rand_split::{SplitRng, SplitPrf, SplitRand};
 //! use rand_split::siprng::{SipRng, SipPrf};
 //!
-//! /// When generating a pair with `SplitRand`, the value generated
-//! /// at each position in the pair should not be affected by how
-//! /// much randomness was consumed by the generation of the other.
-//! fn main() {
-//!     let mut osrng = OsRng::new().ok().expect("Could not create OsRng");
-//!     let mut rng: SipRng = osrng.gen();
+//! # fn main() {
+//! // `SipRng` has a `Rand` instance so we can get a randomly 
+//! // seeded one this way:
+//! let mut rng: SipRng = thread_rng().gen();
 //!
-//!     // First we split off a **pseudo-random function** ("PRF")
-//!     // from the RNG, which implements the `SplitPrf` trait.  A
-//!     // PRF, in this context, is a factory that constructs further
-//!     // `SplitRng`s.
-//!     let prf: SipPrf = rng.splitn();
+//! // We split off a **pseudo-random function** ("PRF") from
+//! // the RNG.  PRFs implement the `SplitPrf` trait.
+//! let prf: SipPrf = rng.splitn();
 //! 
-//!     // Now we pick a random index, and call the PRF four times
-//!     // with that index.
-//!     let i: u64 = rng.next_u64();
-//!     let mut ra: SipRng = prf.call(i);
-//!     let mut rb: SipRng = prf.call(i);
-//!     let mut rc: SipRng = prf.call(i);
-//!     let mut rd: SipRng = prf.call(i);
+//! // PRFs serve as factories that construct further `SplitRng`s.
+//! // So now we pick a random index and call the PRF four times
+//! // with that index to get four new `SipRng`s.
+//! let i: u64 = rng.next_u64();
+//! let mut ra: SipRng = prf.call(i);
+//! let mut rb: SipRng = prf.call(i);
+//! let mut rc: SipRng = prf.call(i);
+//! let mut rd: SipRng = prf.call(i);
 //! 
-//!     // A PRF is a deterministic function from the index into fresh
-//!     // RNG instances.  So the four RNGs we just constructed are
-//!     // guaranteed to be in the same initial state.  (Note that this
-//!     // can be used to randomly generate pure functions!)
-//!     assert!(iter_eq(ra.gen_ascii_chars().take(100),
-//!                     rb.gen_ascii_chars().take(100)));
-//!     assert!(iter_eq(rc.gen_ascii_chars().take(100),
-//!                     rd.gen_ascii_chars().take(100)));
-//!     assert!(iter_eq(ra.gen_ascii_chars().take(100),
-//!                     rc.gen_ascii_chars().take(100)));
-//!     assert!(iter_eq(rb.gen_ascii_chars().take(100),
-//!                     rd.gen_ascii_chars().take(100)));
+//! // A PRF is a function that captures a "frozen" state from
+//! // its parent RNG, and constructs further RNG instances 
+//! // whose initial states depend only on that frozen state and 
+//! // the index supplied to `call`.  So the four RNGs we just
+//! // constructed are guaranteed to be in the same initial state.
+//! // And behold, they produce identical outputs!
+//! assert!(iter_eq(ra.gen_ascii_chars().take(100),
+//!                 rb.gen_ascii_chars().take(100)));
+//! assert!(iter_eq(rc.gen_ascii_chars().take(100),
+//!                 rd.gen_ascii_chars().take(100)));
+//! assert!(iter_eq(ra.gen_ascii_chars().take(100),
+//!                 rc.gen_ascii_chars().take(100)));
+//! assert!(iter_eq(rb.gen_ascii_chars().take(100),
+//!                 rd.gen_ascii_chars().take(100)));
 //! 
+//! // Now for the main course.  We pick two distinct types that
+//! // implement the `SplitRand` trait.  We choose them so that
+//! // generating a value of either type advances the state of a
+//! // sequential RNG by a different amount than the other.
+//! type T0 = [u64; 16];
+//! type T1 = [u64; 32];
 //! 
-//!     // We pick two distinct types that implement the `SplitRand`
-//!     // trait.  We choose them so that generating a value of each
-//!     // type advances the state of a sequential RNG by a different
-//!     // amount than the other.
-//!     type T0 = [u64; 16];
-//!     type T1 = [u64; 32];
+//! for _ in 0..100 {
+//!     // Then we use our four initially-identical RNGs to
+//!     // generate tuples representing all four combinations of
+//!     // our two element types:
+//!     let (a0, a1): (T0, T0) = SplitRand::split_rand(&mut ra);
+//!     let (b0, b1): (T0, T1) = SplitRand::split_rand(&mut rb);
+//!     let (c0, c1): (T1, T0) = SplitRand::split_rand(&mut rc);
+//!     let (d0, d1): (T1, T1) = SplitRand::split_rand(&mut rd);
+//!     
+//!     // And here we test that the value of each element
+//!     // generated depends on its type and its position within
+//!     // its pair, but not on what was generated for the other
+//!     // element.
+//!     assert_eq!(a0, b0);
+//!     assert_eq!(a1, c1);
+//!     assert_eq!(b1, d1);
+//!     assert_eq!(c0, d0);
 //! 
-//!     for _ in 0..100 {
-//!         // Now we use our four initially-identical RNGs to
-//!         // generate tuples representing all four combinations of
-//!         // our two element types:
-//!         let (a0, a1): (T0, T0) = SplitRand::split_rand(&mut ra);
-//!         let (b0, b1): (T0, T1) = SplitRand::split_rand(&mut rb);
-//!         let (c0, c1): (T1, T0) = SplitRand::split_rand(&mut rc);
-//!         let (d0, d1): (T1, T1) = SplitRand::split_rand(&mut rd);
-//!         
-//!         // And here we test that the value of each element
-//!         // generated depends on its type and its position within
-//!         // its pair, but not on what was generated for the other
-//!         // element.
-//!         assert_eq!(a0, b0);
-//!         assert_eq!(a1, c1);
-//!         assert_eq!(b1, d1);
-//!         assert_eq!(c0, d0);
-//! 
-//!         // Finally, note that we're doing this inside of a loop
-//!         // and reusing the same four generators for each
-//!         // iteration.  So at this point all four generators must
-//!         // be in the same state for subsequent iterations to pass.
-//!     }
+//!     // Finally, note that we're doing this inside of a loop
+//!     // and reusing the same four RNGs on each iteration.  So 
+//!     // at this point all four generators must end the same
+//!     // state or subsequent iterations will fail.
 //! }
-//!
+//! # }
+//! #
 //! # fn iter_eq<I, J>(i: I, j: J) -> bool
 //! #     where I: IntoIterator,
 //! #           J: IntoIterator<Item=I::Item>,
@@ -379,29 +391,17 @@ mod tests {
     use rand::SeedableRng;
     use ::{SplitRng, SplitPrf, SplitRand};
 
-
-    /// When generating a pair with `SplitRand`, the value generated
-    /// at each position in the pair should not be affected by how
-    /// much randomness was consumed by the generation of the other.
+    /// Test that generation of tuple elements with `SplitRand` is
+    /// independent.
     pub fn test_split_rand_independence<R: SplitRng>(rng: &mut R) {
-        // First we split off a **pseudo-random function** ("PRF")
-        // from the RNG, which implements the `SplitPrf` trait.  A
-        // PRF, in this context, is a factory that constructs further
-        // `SplitRng`s.
         let prf: R::Prf = rng.splitn();
 
-        // Now we pick a random index, and call the PRF four times
-        // with that index.
         let i: u64 = rng.next_u64();
         let mut ra: R = prf.call(i);
         let mut rb: R = prf.call(i);
         let mut rc: R = prf.call(i);
         let mut rd: R = prf.call(i);
 
-        // A PRF is a deterministic function from the index into fresh
-        // RNG instances.  So the four RNGs we just constructed are
-        // guaranteed to be in the same initial state.  (Note that this
-        // can be used to randomly generate pure functions!)
         assert!(iter_eq(ra.gen_ascii_chars().take(100),
                         rb.gen_ascii_chars().take(100)));
         assert!(iter_eq(rc.gen_ascii_chars().take(100),
@@ -412,35 +412,18 @@ mod tests {
                         rd.gen_ascii_chars().take(100)));
 
 
-        // We pick two distinct types that implement the `SplitRand`
-        // trait.  We choose them so that generating a value of each
-        // type advances the state of a sequential RNG by a different
-        // amount than the other.
         type T0 = [u64; 16];
         type T1 = [u64; 32];
-
         for _ in 0..100 {
-            // Now we use our four initially-identical RNGs to
-            // generate tuples representing all four combinations of
-            // our two element types:
             let (a0, a1): (T0, T0) = SplitRand::split_rand(&mut ra);
             let (b0, b1): (T0, T1) = SplitRand::split_rand(&mut rb);
             let (c0, c1): (T1, T0) = SplitRand::split_rand(&mut rc);
             let (d0, d1): (T1, T1) = SplitRand::split_rand(&mut rd);
             
-            // And here we test that the value of each element
-            // generated depends on its type and its position within
-            // its pair, but not on what was generated for the other
-            // element.
             assert_eq!(a0, b0);
             assert_eq!(a1, c1);
             assert_eq!(b1, d1);
             assert_eq!(c0, d0);
-
-            // Finally, note that we're doing this inside of a loop
-            // and reusing the same four generators for each
-            // iteration.  So at this point all four generators must
-            // be in the same state for subsequent iterations to pass.
         }
     }
 
