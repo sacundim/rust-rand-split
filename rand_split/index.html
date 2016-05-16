@@ -47,7 +47,7 @@
                    <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">
                        [<span class='inner'>&#x2212;</span>]
                    </a>
-               </span><a id='src-0' class='srclink' href='../src/rand_split/src/lib.rs.html#10-532' title='goto source code'>[src]</a></span></h1>
+               </span><a id='src-0' class='srclink' href='../src/rand_split/src/lib.rs.html#10-548' title='goto source code'>[src]</a></span></h1>
 <div class='docblock'><p>Splittable pseudo-random number generators.</p>
 
 <p>These are generators that support a <strong>split</strong> operations that
@@ -242,6 +242,16 @@ cryptographically secure PRNG.</strong></p>
 has a <code>Rand</code> implementation, simply by using that.  This is meant
 to be used for &quot;atomic&quot; types whose generation doesn&#39;t benefit
 from splittability.</p>
+                           </td>
+                       </tr></table><h2 id='structs' class='section-header'><a href="#structs">Structs</a></h2>
+<table>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.Seq.html'
+                                  title='rand_split::Seq'>Seq</a></td>
+                           <td class='docblock short'>
+                                <p>A newtype wrapper to add a <code>SplitRand</code> implementation to <code>Rand</code>
+types.  This just does the same thing as the base type&#39;s <code>Rand</code>
+one does.</p>
                            </td>
                        </tr></table><h2 id='traits' class='section-header'><a href="#traits">Traits</a></h2>
 <table>
