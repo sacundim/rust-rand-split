@@ -23,7 +23,7 @@
 
 use rand::{Rand, Rng, SeedableRng};
 use super::{SplitRng, SplitPrf};
-use std::mem;
+use std::{self, mem};
 
 
 /// A splittable pseudorandom generator based on SipHash.
@@ -33,14 +33,15 @@ pub struct SipRng {
     v2:  u64,
     v3:  u64,
     ctr: u64,
-    len: usize
+    len: u64
 }
 
 /// A PRF taken off a `SipRng`.
 pub struct SipPrf(SipRng);
 
 
-macro_rules! sipround {
+/// A round of the SipHash function.
+macro_rules! sip_round {
     ($v0: expr, $v1: expr, $v2: expr, $v3: expr) => {
         $v0 = $v0.wrapping_add($v1); $v2 = $v2.wrapping_add($v3);
         $v1 = $v1.rotate_left(13);   $v3 = $v3.rotate_left(16);
@@ -53,6 +54,32 @@ macro_rules! sipround {
         $v2 = $v0.rotate_left(32);
     }
 }
+
+/// Process one block of SipHash.  One block = one `u64`.
+macro_rules! sip_block {
+    ($v0: expr, $v1: expr, $v2: expr, $v3: expr, $block: expr) => {
+        $v3 ^= $block;
+        sip_round!($v0, $v1, $v2, $v3);
+        $v0 ^= $block;
+    }
+}
+
+/// Compute the result of SipHash.  `$len` is the amount of data
+/// hashed, in bytes.
+macro_rules! sip_finish {
+    ($v0: expr, $v1: expr, $v2: expr, $v3: expr, $len: expr) => {
+        {
+            sip_block!($v0, $v1, $v2, $v3, $len.wrapping_shl(56));
+            
+            $v2 ^= 0xff;
+            sip_round!($v0, $v1, $v2, $v3);
+            sip_round!($v0, $v1, $v2, $v3);
+            sip_round!($v0, $v1, $v2, $v3);
+            $v0 ^ $v1 ^ $v2 ^ $v3
+        }
+    }
+}
+
 
 const C0: u64 = 0x736f6d6570736575;
 const C1: u64 = 0x646f72616e646f6d;
@@ -83,22 +110,31 @@ impl SipRng {
         }
     }
 
+    /// Generate one block of sequential output.
     #[inline]
-    fn advance(&mut self) {
-        self.v3 ^= self.ctr;
-        sipround!(self.v0, self.v1, self.v2, self.v3);
-        self.v0 ^= self.ctr;
+    fn advance(&mut self) -> u64 {
+        sip_block!(self.v0, self.v1, self.v2, self.v3, self.ctr);
+        sip_block!(self.v0, self.v1, self.v2, self.v3, std::u64::MAX);
+
         self.ctr = self.ctr.wrapping_add(1);
         if self.ctr == 0 {
             self.descend(0);
         }
+
+        let (mut v0, mut v1, mut v2, mut v3) = 
+            (self.v0, self.v1, self.v2, self.v3);
+        sip_finish!(v0, v1, v2, v3, self.len.wrapping_mul(8))
     }
 
+    /// Go into the state for the `i`th branch from this generator
+    /// state.  The "descend" name is due to Claessen & Pałka's
+    /// exposition of their splittable RNG as a tree; splitting the
+    /// generator means descending down one of the tree's branches
+    /// (indexed by `i`).
     #[inline]
     fn descend(&mut self, i: u64) {
-        self.v3 ^= i;
-        sipround!(self.v0, self.v1, self.v2, self.v3);
-        self.v0 ^= i;
+        sip_block!(self.v0, self.v1, self.v2, self.v3, i);
+        sip_block!(self.v0, self.v1, self.v2, self.v3, 0);
         self.len = self.len.wrapping_add(1);
         self.ctr = 0;
     }
@@ -133,20 +169,7 @@ impl SplitRng for SipRng {
 impl Rng for SipRng {
     #[inline]
     fn next_u64(&mut self) -> u64 {
-        self.advance();
-        let (mut v0, mut v1, mut v2, mut v3) = 
-            (self.v0, self.v1, self.v2, self.v3);
-
-        let len = (self.len as u64).wrapping_shl(56);
-        v3 ^= len;
-        sipround!(v0, v1, v2, v3);
-        v0 ^= len;
-
-        v2 ^= 0xff;
-        sipround!(v0, v1, v2, v3);
-        sipround!(v0, v1, v2, v3);
-        sipround!(v0, v1, v2, v3);
-        v0 ^ v1 ^ v2 ^ v3
+        self.advance()
     }
     
     #[inline]
