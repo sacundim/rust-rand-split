@@ -60,6 +60,7 @@ macro_rules! sip_block {
     ($v0: expr, $v1: expr, $v2: expr, $v3: expr, $block: expr) => {
         $v3 ^= $block;
         sip_round!($v0, $v1, $v2, $v3);
+        sip_round!($v0, $v1, $v2, $v3);
         $v0 ^= $block;
     }
 }
@@ -72,6 +73,7 @@ macro_rules! sip_finish {
             sip_block!($v0, $v1, $v2, $v3, $len.wrapping_shl(56));
             
             $v2 ^= 0xff;
+            sip_round!($v0, $v1, $v2, $v3);
             sip_round!($v0, $v1, $v2, $v3);
             sip_round!($v0, $v1, $v2, $v3);
             sip_round!($v0, $v1, $v2, $v3);
