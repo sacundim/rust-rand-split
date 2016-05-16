@@ -263,6 +263,21 @@ pub trait SplitRand {
     
 }
 
+/// A newtype wrapper to add a `SplitRand` implementation to `Rand`
+/// types.  This just does the same thing as the base type's `Rand`
+/// one does.
+pub struct Seq<A>(pub A);
+
+impl<A: Rand> SplitRand for Seq<A> {
+
+    #[inline]
+    fn split_rand<R: SplitRng>(rng: &mut R) -> Self {
+        Seq(Rand::rand(rng))
+    }
+
+}
+
+
 impl<A: Hash, B: Rand> SplitRand for Box<Fn(A) -> B> {
     
     fn split_rand<R>(rng: &mut R) -> Self 
@@ -292,7 +307,8 @@ macro_rules! split_rand_seq_impl {
         impl SplitRand for $t {
             #[inline]
             fn split_rand<R: SplitRng>(rng: &mut R) -> Self {
-                Rand::rand(rng)
+                let Seq(result) = SplitRand::split_rand(rng);
+                result
             }
         }
     }
