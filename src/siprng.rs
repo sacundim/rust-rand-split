@@ -89,6 +89,9 @@ impl SipRng {
         sipround!(self.v0, self.v1, self.v2, self.v3);
         self.v0 ^= self.ctr;
         self.ctr = self.ctr.wrapping_add(1);
+        if self.ctr == 0 {
+            self.descend(0);
+        }
     }
 
     #[inline]
