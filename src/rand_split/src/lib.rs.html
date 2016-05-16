@@ -563,6 +563,12 @@
 <span id="519">519</span>
 <span id="520">520</span>
 <span id="521">521</span>
+<span id="522">522</span>
+<span id="523">523</span>
+<span id="524">524</span>
+<span id="525">525</span>
+<span id="526">526</span>
+<span id="527">527</span>
 </pre><pre class='rust '>
 <span class='comment'>// Copyright 2016 Luis Casillas. See the COPYRIGHT file at the</span>
 <span class='comment'>// top-level directory of this distribution</span>
@@ -703,6 +709,9 @@
 <span class='doccomment'>//!     assert_eq!(a1, c1);</span>
 <span class='doccomment'>//!     assert_eq!(b1, d1);</span>
 <span class='doccomment'>//!     assert_eq!(c0, d0);</span>
+<span class='doccomment'>//!     assert!(a0 != a1);</span>
+<span class='doccomment'>//!     assert!(a0 != c1);</span>
+<span class='doccomment'>//!     assert!(d0 != d1);</span>
 <span class='doccomment'>//! </span>
 <span class='doccomment'>//!     // Finally, note that we&#39;re doing this inside of a loop</span>
 <span class='doccomment'>//!     // and reusing the same four RNGs on each iteration.  So </span>
@@ -990,6 +999,9 @@
             <span class='macro'>assert_eq</span><span class='macro'>!</span>(<span class='ident'>a1</span>, <span class='ident'>c1</span>);
             <span class='macro'>assert_eq</span><span class='macro'>!</span>(<span class='ident'>b1</span>, <span class='ident'>d1</span>);
             <span class='macro'>assert_eq</span><span class='macro'>!</span>(<span class='ident'>c0</span>, <span class='ident'>d0</span>);
+            <span class='macro'>assert</span><span class='macro'>!</span>(<span class='ident'>a0</span> <span class='op'>!=</span> <span class='ident'>a1</span>);
+            <span class='macro'>assert</span><span class='macro'>!</span>(<span class='ident'>a0</span> <span class='op'>!=</span> <span class='ident'>c1</span>);
+            <span class='macro'>assert</span><span class='macro'>!</span>(<span class='ident'>d0</span> <span class='op'>!=</span> <span class='ident'>d1</span>);
         }
     }
 

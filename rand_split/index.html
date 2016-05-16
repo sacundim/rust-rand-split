@@ -47,7 +47,7 @@
                    <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">
                        [<span class='inner'>&#x2212;</span>]
                    </a>
-               </span><a id='src-0' class='srclink' href='../src/rand_split/src/lib.rs.html#10-521' title='goto source code'>[src]</a></span></h1>
+               </span><a id='src-0' class='srclink' href='../src/rand_split/src/lib.rs.html#10-527' title='goto source code'>[src]</a></span></h1>
 <div class='docblock'><p>Splittable pseudo-random number generators.</p>
 
 <p>These are generators that support a <strong>split</strong> operations that
@@ -176,6 +176,9 @@ can be illustrated with our flagship unit test:</p>
     <span class='macro'>assert_eq</span><span class='macro'>!</span>(<span class='ident'>a1</span>, <span class='ident'>c1</span>);
     <span class='macro'>assert_eq</span><span class='macro'>!</span>(<span class='ident'>b1</span>, <span class='ident'>d1</span>);
     <span class='macro'>assert_eq</span><span class='macro'>!</span>(<span class='ident'>c0</span>, <span class='ident'>d0</span>);
+    <span class='macro'>assert</span><span class='macro'>!</span>(<span class='ident'>a0</span> <span class='op'>!=</span> <span class='ident'>a1</span>);
+    <span class='macro'>assert</span><span class='macro'>!</span>(<span class='ident'>a0</span> <span class='op'>!=</span> <span class='ident'>c1</span>);
+    <span class='macro'>assert</span><span class='macro'>!</span>(<span class='ident'>d0</span> <span class='op'>!=</span> <span class='ident'>d1</span>);
  
     <span class='comment'>// Finally, note that we&#39;re doing this inside of a loop</span>
     <span class='comment'>// and reusing the same four RNGs on each iteration.  So </span>
