@@ -569,6 +569,11 @@
 <span id="525">525</span>
 <span id="526">526</span>
 <span id="527">527</span>
+<span id="528">528</span>
+<span id="529">529</span>
+<span id="530">530</span>
+<span id="531">531</span>
+<span id="532">532</span>
 </pre><pre class='rust '>
 <span class='comment'>// Copyright 2016 Luis Casillas. See the COPYRIGHT file at the</span>
 <span class='comment'>// top-level directory of this distribution</span>
@@ -648,27 +653,32 @@
 <span class='doccomment'>//! extern crate rand;</span>
 <span class='doccomment'>//! extern crate rand_split;</span>
 <span class='doccomment'>//!</span>
-<span class='doccomment'>//! use rand::{Rng, thread_rng};</span>
-<span class='doccomment'>//! use rand_split::{SplitRng, SplitPrf, SplitRand};</span>
-<span class='doccomment'>//! use rand_split::siprng::{SipRng, SipPrf};</span>
+<span class='doccomment'>//! use rand::{Rng, XorShiftRng, thread_rng};</span>
+<span class='doccomment'>//! use rand_split::{SplitRng, SplitPrf, SplitRand, Split, Prf};</span>
 <span class='doccomment'>//!</span>
 <span class='doccomment'>//! # fn main() {</span>
-<span class='doccomment'>//! // `SipRng` has a `Rand` instance so we can get a randomly </span>
-<span class='doccomment'>//! // seeded one this way:</span>
-<span class='doccomment'>//! let mut rng: SipRng = thread_rng().gen();</span>
+<span class='doccomment'>//! // We will be using the `rand` crate&#39;s `XorShiftRng`, but</span>
+<span class='doccomment'>//! // wrapped with a `Split` wrapper that adds splittability</span>
+<span class='doccomment'>//! // on top of it.</span>
+<span class='doccomment'>//! type OurRng = Split&lt;XorShiftRng&gt;;</span>
+<span class='doccomment'>//! type OurPrf = Prf&lt;XorShiftRng&gt;;</span>
+<span class='doccomment'>//!</span>
+<span class='doccomment'>//! // The library&#39;s RNGs have `Rand` instances, so we can get</span>
+<span class='doccomment'>//! // a randomly seeded RNG this way:</span>
+<span class='doccomment'>//! let mut rng: OurRng = thread_rng().gen();</span>
 <span class='doccomment'>//!</span>
 <span class='doccomment'>//! // We split off a **pseudo-random function** (&quot;PRF&quot;) from</span>
 <span class='doccomment'>//! // the RNG.  PRFs implement the `SplitPrf` trait.</span>
-<span class='doccomment'>//! let prf: SipPrf = rng.splitn();</span>
+<span class='doccomment'>//! let prf: OurPrf = rng.splitn();</span>
 <span class='doccomment'>//! </span>
 <span class='doccomment'>//! // PRFs serve as factories that construct further `SplitRng`s.</span>
 <span class='doccomment'>//! // So now we pick a random index and call the PRF four times</span>
-<span class='doccomment'>//! // with that index to get four new `SipRng`s.</span>
+<span class='doccomment'>//! // with that index to get four new RNGs.</span>
 <span class='doccomment'>//! let i: u64 = rng.next_u64();</span>
-<span class='doccomment'>//! let mut ra: SipRng = prf.call(i);</span>
-<span class='doccomment'>//! let mut rb: SipRng = prf.call(i);</span>
-<span class='doccomment'>//! let mut rc: SipRng = prf.call(i);</span>
-<span class='doccomment'>//! let mut rd: SipRng = prf.call(i);</span>
+<span class='doccomment'>//! let mut ra: OurRng = prf.call(i);</span>
+<span class='doccomment'>//! let mut rb: OurRng = prf.call(i);</span>
+<span class='doccomment'>//! let mut rc: OurRng = prf.call(i);</span>
+<span class='doccomment'>//! let mut rd: OurRng = prf.call(i);</span>
 <span class='doccomment'>//! </span>
 <span class='doccomment'>//! // A PRF is a function that captures a &quot;frozen&quot; state from</span>
 <span class='doccomment'>//! // its parent RNG, and constructs further RNG instances </span>

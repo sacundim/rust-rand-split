@@ -47,7 +47,7 @@
                    <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">
                        [<span class='inner'>&#x2212;</span>]
                    </a>
-               </span><a id='src-0' class='srclink' href='../src/rand_split/src/lib.rs.html#10-527' title='goto source code'>[src]</a></span></h1>
+               </span><a id='src-0' class='srclink' href='../src/rand_split/src/lib.rs.html#10-532' title='goto source code'>[src]</a></span></h1>
 <div class='docblock'><p>Splittable pseudo-random number generators.</p>
 
 <p>These are generators that support a <strong>split</strong> operations that
@@ -116,26 +116,31 @@ can be illustrated with our flagship unit test:</p>
 <span class='kw'>extern</span> <span class='kw'>crate</span> <span class='ident'>rand</span>;
 <span class='kw'>extern</span> <span class='kw'>crate</span> <span class='ident'>rand_split</span>;
 
-<span class='kw'>use</span> <span class='ident'>rand</span>::{<span class='ident'>Rng</span>, <span class='ident'>thread_rng</span>};
-<span class='kw'>use</span> <span class='ident'>rand_split</span>::{<span class='ident'>SplitRng</span>, <span class='ident'>SplitPrf</span>, <span class='ident'>SplitRand</span>};
-<span class='kw'>use</span> <span class='ident'>rand_split</span>::<span class='ident'>siprng</span>::{<span class='ident'>SipRng</span>, <span class='ident'>SipPrf</span>};
+<span class='kw'>use</span> <span class='ident'>rand</span>::{<span class='ident'>Rng</span>, <span class='ident'>XorShiftRng</span>, <span class='ident'>thread_rng</span>};
+<span class='kw'>use</span> <span class='ident'>rand_split</span>::{<span class='ident'>SplitRng</span>, <span class='ident'>SplitPrf</span>, <span class='ident'>SplitRand</span>, <span class='ident'>Split</span>, <span class='ident'>Prf</span>};
 
-<span class='comment'>// `SipRng` has a `Rand` instance so we can get a randomly </span>
-<span class='comment'>// seeded one this way:</span>
-<span class='kw'>let</span> <span class='kw-2'>mut</span> <span class='ident'>rng</span>: <span class='ident'>SipRng</span> <span class='op'>=</span> <span class='ident'>thread_rng</span>().<span class='ident'>gen</span>();
+<span class='comment'>// We will be using the `rand` crate&#39;s `XorShiftRng`, but</span>
+<span class='comment'>// wrapped with a `Split` wrapper that adds splittability</span>
+<span class='comment'>// on top of it.</span>
+<span class='kw'>type</span> <span class='ident'>OurRng</span> <span class='op'>=</span> <span class='ident'>Split</span><span class='op'>&lt;</span><span class='ident'>XorShiftRng</span><span class='op'>&gt;</span>;
+<span class='kw'>type</span> <span class='ident'>OurPrf</span> <span class='op'>=</span> <span class='ident'>Prf</span><span class='op'>&lt;</span><span class='ident'>XorShiftRng</span><span class='op'>&gt;</span>;
+
+<span class='comment'>// The library&#39;s RNGs have `Rand` instances, so we can get</span>
+<span class='comment'>// a randomly seeded RNG this way:</span>
+<span class='kw'>let</span> <span class='kw-2'>mut</span> <span class='ident'>rng</span>: <span class='ident'>OurRng</span> <span class='op'>=</span> <span class='ident'>thread_rng</span>().<span class='ident'>gen</span>();
 
 <span class='comment'>// We split off a **pseudo-random function** (&quot;PRF&quot;) from</span>
 <span class='comment'>// the RNG.  PRFs implement the `SplitPrf` trait.</span>
-<span class='kw'>let</span> <span class='ident'>prf</span>: <span class='ident'>SipPrf</span> <span class='op'>=</span> <span class='ident'>rng</span>.<span class='ident'>splitn</span>();
+<span class='kw'>let</span> <span class='ident'>prf</span>: <span class='ident'>OurPrf</span> <span class='op'>=</span> <span class='ident'>rng</span>.<span class='ident'>splitn</span>();
  
 <span class='comment'>// PRFs serve as factories that construct further `SplitRng`s.</span>
 <span class='comment'>// So now we pick a random index and call the PRF four times</span>
-<span class='comment'>// with that index to get four new `SipRng`s.</span>
+<span class='comment'>// with that index to get four new RNGs.</span>
 <span class='kw'>let</span> <span class='ident'>i</span>: <span class='ident'>u64</span> <span class='op'>=</span> <span class='ident'>rng</span>.<span class='ident'>next_u64</span>();
-<span class='kw'>let</span> <span class='kw-2'>mut</span> <span class='ident'>ra</span>: <span class='ident'>SipRng</span> <span class='op'>=</span> <span class='ident'>prf</span>.<span class='ident'>call</span>(<span class='ident'>i</span>);
-<span class='kw'>let</span> <span class='kw-2'>mut</span> <span class='ident'>rb</span>: <span class='ident'>SipRng</span> <span class='op'>=</span> <span class='ident'>prf</span>.<span class='ident'>call</span>(<span class='ident'>i</span>);
-<span class='kw'>let</span> <span class='kw-2'>mut</span> <span class='ident'>rc</span>: <span class='ident'>SipRng</span> <span class='op'>=</span> <span class='ident'>prf</span>.<span class='ident'>call</span>(<span class='ident'>i</span>);
-<span class='kw'>let</span> <span class='kw-2'>mut</span> <span class='ident'>rd</span>: <span class='ident'>SipRng</span> <span class='op'>=</span> <span class='ident'>prf</span>.<span class='ident'>call</span>(<span class='ident'>i</span>);
+<span class='kw'>let</span> <span class='kw-2'>mut</span> <span class='ident'>ra</span>: <span class='ident'>OurRng</span> <span class='op'>=</span> <span class='ident'>prf</span>.<span class='ident'>call</span>(<span class='ident'>i</span>);
+<span class='kw'>let</span> <span class='kw-2'>mut</span> <span class='ident'>rb</span>: <span class='ident'>OurRng</span> <span class='op'>=</span> <span class='ident'>prf</span>.<span class='ident'>call</span>(<span class='ident'>i</span>);
+<span class='kw'>let</span> <span class='kw-2'>mut</span> <span class='ident'>rc</span>: <span class='ident'>OurRng</span> <span class='op'>=</span> <span class='ident'>prf</span>.<span class='ident'>call</span>(<span class='ident'>i</span>);
+<span class='kw'>let</span> <span class='kw-2'>mut</span> <span class='ident'>rd</span>: <span class='ident'>OurRng</span> <span class='op'>=</span> <span class='ident'>prf</span>.<span class='ident'>call</span>(<span class='ident'>i</span>);
  
 <span class='comment'>// A PRF is a function that captures a &quot;frozen&quot; state from</span>
 <span class='comment'>// its parent RNG, and constructs further RNG instances </span>
