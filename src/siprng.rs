@@ -8,7 +8,8 @@
 //! of the Skein hash function, however, we use SipHash as the
 //! pseudo-random function.
 //!
-//! References:
+//!
+//! ## References
 //!
 //! * Aumasson, Jean-Philippe and Daniel J. Bernstein.  2012.
 //!   ["SipHash: a fast short-input
