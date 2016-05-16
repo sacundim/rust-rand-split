@@ -76,27 +76,32 @@
 //! extern crate rand;
 //! extern crate rand_split;
 //!
-//! use rand::{Rng, thread_rng};
-//! use rand_split::{SplitRng, SplitPrf, SplitRand};
-//! use rand_split::siprng::{SipRng, SipPrf};
+//! use rand::{Rng, XorShiftRng, thread_rng};
+//! use rand_split::{SplitRng, SplitPrf, SplitRand, Split, Prf};
 //!
 //! # fn main() {
-//! // `SipRng` has a `Rand` instance so we can get a randomly 
-//! // seeded one this way:
-//! let mut rng: SipRng = thread_rng().gen();
+//! // We will be using the `rand` crate's `XorShiftRng`, but
+//! // wrapped with a `Split` wrapper that adds splittability
+//! // on top of it.
+//! type OurRng = Split<XorShiftRng>;
+//! type OurPrf = Prf<XorShiftRng>;
+//!
+//! // The library's RNGs have `Rand` instances, so we can get
+//! // a randomly seeded RNG this way:
+//! let mut rng: OurRng = thread_rng().gen();
 //!
 //! // We split off a **pseudo-random function** ("PRF") from
 //! // the RNG.  PRFs implement the `SplitPrf` trait.
-//! let prf: SipPrf = rng.splitn();
+//! let prf: OurPrf = rng.splitn();
 //! 
 //! // PRFs serve as factories that construct further `SplitRng`s.
 //! // So now we pick a random index and call the PRF four times
-//! // with that index to get four new `SipRng`s.
+//! // with that index to get four new RNGs.
 //! let i: u64 = rng.next_u64();
-//! let mut ra: SipRng = prf.call(i);
-//! let mut rb: SipRng = prf.call(i);
-//! let mut rc: SipRng = prf.call(i);
-//! let mut rd: SipRng = prf.call(i);
+//! let mut ra: OurRng = prf.call(i);
+//! let mut rb: OurRng = prf.call(i);
+//! let mut rc: OurRng = prf.call(i);
+//! let mut rd: OurRng = prf.call(i);
 //! 
 //! // A PRF is a function that captures a "frozen" state from
 //! // its parent RNG, and constructs further RNG instances 
