@@ -1,0 +1,20 @@
+[package]
+name = "rand-tester"
+version = "0.1.0"
+authors = ["Luis Casillas <luis@casillas.org>"]
+license = "MIT/Apache-2.0"
+readme = "README.md"
+description = """
+A test rig command line program for producing raw byte output from 
+various random number generators.  Suitable for feeding to quality
+testing statistical tools such as PractRand or Dieharder.
+"""
+keywords = ["random", "rng"]
+
+[dependencies]
+clap = "2"
+mersenne_twister = { git = "https://github.com/sacundim/rust-mersenne-twister" }
+rand = "0.3"
+rust-crypto = "^0.2"
+rand-split = { path = ".." }
+void = "1"
