@@ -1,0 +1,1 @@
+initSidebarItems({"struct":[["Prf","The PRF type that corresponds to `Split`."],["Split","Wrapper that turns a `SplitRng` `S` and an `Rng` `R` into a `SplitRng`."]]});

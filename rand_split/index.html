@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="rustdoc">
+    <meta name="description" content="API documentation for the Rust `rand_split` crate.">
+    <meta name="keywords" content="rust, rustlang, rust-lang, rand_split">
+
+    <title>rand_split - Rust</title>
+
+    <link rel="stylesheet" type="text/css" href="../rustdoc.css">
+    <link rel="stylesheet" type="text/css" href="../main.css">
+    
+
+    
+    
+</head>
+<body class="rustdoc">
+    <!--[if lte IE 8]>
+    <div class="warning">
+        This old browser is unsupported and will most likely display funky
+        things.
+    </div>
+    <![endif]-->
+
+    
+
+    <nav class="sidebar">
+        
+        <p class='location'></p><script>window.sidebarCurrent = {name: 'rand_split', ty: 'mod', relpath: '../'};</script>
+    </nav>
+
+    <nav class="sub">
+        <form class="search-form js-only">
+            <div class="search-container">
+                <input class="search-input" name="search"
+                       autocomplete="off"
+                       placeholder="Click or press ‘S’ to search, ‘?’ for more options…"
+                       type="search">
+            </div>
+        </form>
+    </nav>
+
+    <section id='main' class="content mod">
+<h1 class='fqn'><span class='in-band'>Crate <a class='mod' href=''>rand_split</a></span><span class='out-of-band'><span id='render-detail'>
+                   <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">
+                       [<span class='inner'>&#x2212;</span>]
+                   </a>
+               </span><a id='src-0' class='srclink' href='../src/rand_split/src/lib.rs.html#10-402' title='goto source code'>[src]</a></span></h1>
+<div class='docblock'><p>A crate to support <strong>splittable</strong> random number generators.</p>
+
+<p>These are genertors that support a &quot;split&quot; operation that produces
+two or more &quot;child&quot; generators whose initial state depends on the
+source RNG&#39;s state, but produce outputs that are uncorrelated to
+each other.  This can be useful in some contexts:</p>
+
+<ul>
+<li>Functional programs sometimes make good use of splittable RNGs.  The
+Haskell <a href="https://hackage.haskell.org/package/QuickCheck">QuickCheck</a> 
+library is a notable example that uses a splittable, pure-functional
+PRNG to support random generation of deterministic functions.</li>
+<li>Parallel programs may benefit from a splittable PRNG.  The
+advantage isn&#39;t necessarily performance but rather
+<strong>reproducibility</strong>; it makes it easier to guarantee that using
+the same seed yields the same results even if the execution order
+is nondeterministic.</li>
+</ul>
+
+<p>References:</p>
+
+<ul>
+<li>Claessen, Koen and Michał H. Pałka.  2013.  <a href="http://publications.lib.chalmers.se/records/fulltext/183348/local_183348.pdf">&quot;Splittable
+Pseudorandom Number Generators using Cryptographic
+Hashing.&quot;</a>
+<em>Haskell &#39;13: Proceedings of the 2013 ACM SIGPLAN symposium on
+Haskell</em>, pp. 47-58.</li>
+<li>Schaathun, Hans Georg.  2015.  <a href="http://www.hg.schaathun.net/research/Papers/hgs2015jfp.pdf">&quot;Evaluation of Splittable
+Pseudo-Random
+Generators.&quot;</a>
+<em>Journal of Functional Programming</em>, Vol. 25.</li>
+<li>The Haskell <a href="https://hackage.haskell.org/package/tf-random"><code>tf-random</code> library</a>.</li>
+</ul>
+</div><h2 id='modules' class='section-header'><a href="#modules">Modules</a></h2>
+<table>
+                       <tr class=' module-item'>
+                           <td><a class='mod' href='generic/index.html'
+                                  title='rand_split::generic'>generic</a></td>
+                           <td class='docblock short'>
+                                <p>A construction that turns a pair of a splittable and a sequential
+PRNG into a splittable PRNG.  The intent of this is to gain the
+splittability of the former but retain the sequential generation
+speed of the latter.</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='mod' href='siprng/index.html'
+                                  title='rand_split::siprng'>siprng</a></td>
+                           <td class='docblock short'>
+                                <p>A splittable pseudo-random number generator based on the
+SipHash function.  <strong>This is not intended to be a
+cryptographically secure PRNG.</strong></p>
+                           </td>
+                       </tr></table><h2 id='macros' class='section-header'><a href="#macros">Macros</a></h2>
+<table>
+                       <tr class=' module-item'>
+                           <td><a class='macro' href='macro.split_rand_seq_impl!.html'
+                                  title='rand_split::split_rand_seq_impl!'>split_rand_seq_impl!</a></td>
+                           <td class='docblock short'>
+                                <p>A macro that implements <code>SplitRand</code> sequentially for any type that
+has a <code>Rand</code> implementation, simply by using that.  This is meant
+to be used for &quot;atomic&quot; types whose generation doesn&#39;t benefit
+from splittability.</p>
+                           </td>
+                       </tr></table><h2 id='traits' class='section-header'><a href="#traits">Traits</a></h2>
+<table>
+                       <tr class=' module-item'>
+                           <td><a class='trait' href='trait.SplitPrf.html'
+                                  title='rand_split::SplitPrf'>SplitPrf</a></td>
+                           <td class='docblock short'>
+                                <p>Pseudo-random functions (&quot;PRFs&quot;) generated off a <code>SplitRng</code>.</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='trait' href='trait.SplitRand.html'
+                                  title='rand_split::SplitRand'>SplitRand</a></td>
+                           <td class='docblock short'>
+                                <p>A type that can be randomly generated from a <code>SplitRand</code>.
+Implementations are expected to exploit splittability where
+possible.</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='trait' href='trait.SplitRng.html'
+                                  title='rand_split::SplitRng'>SplitRng</a></td>
+                           <td class='docblock short'>
+                                <p>A trait for <strong>splittable</strong> pseudo random generators.</p>
+                           </td>
+                       </tr></table><h2 id='types' class='section-header'><a href="#types">Type Definitions</a></h2>
+<table>
+                       <tr class=' module-item'>
+                           <td><a class='type' href='type.Prf.html'
+                                  title='rand_split::Prf'>Prf</a></td>
+                           <td class='docblock short'>
+                                <p>The pseudo-random functions of a generic <code>Split</code> RNG.</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='type' href='type.Split.html'
+                                  title='rand_split::Split'>Split</a></td>
+                           <td class='docblock short'>
+                                <p>A wrapper that generically adds splittability to RNGs.</p>
+                           </td>
+                       </tr></table></section>
+    <section id='search' class="content hidden"></section>
+
+    <section class="footer"></section>
+
+    <aside id="help" class="hidden">
+        <div>
+            <h1 class="hidden">Help</h1>
+
+            <div class="shortcuts">
+                <h2>Keyboard Shortcuts</h2>
+
+                <dl>
+                    <dt>?</dt>
+                    <dd>Show this help dialog</dd>
+                    <dt>S</dt>
+                    <dd>Focus the search field</dd>
+                    <dt>&larrb;</dt>
+                    <dd>Move up in search results</dd>
+                    <dt>&rarrb;</dt>
+                    <dd>Move down in search results</dd>
+                    <dt>&#9166;</dt>
+                    <dd>Go to active search result</dd>
+                </dl>
+            </div>
+
+            <div class="infos">
+                <h2>Search Tricks</h2>
+
+                <p>
+                    Prefix searches with a type followed by a colon (e.g.
+                    <code>fn:</code>) to restrict the search to a given type.
+                </p>
+
+                <p>
+                    Accepted types are: <code>fn</code>, <code>mod</code>,
+                    <code>struct</code>, <code>enum</code>,
+                    <code>trait</code>, <code>type</code>, <code>macro</code>,
+                    and <code>const</code>.
+                </p>
+
+                <p>
+                    Search functions by type signature (e.g.
+                    <code>vec -> usize</code> or <code>* -> vec</code>)
+                </p>
+            </div>
+        </div>
+    </aside>
+
+    
+
+    <script>
+        window.rootPath = "../";
+        window.currentCrate = "rand_split";
+        window.playgroundUrl = "";
+    </script>
+    <script src="../jquery.js"></script>
+    <script src="../main.js"></script>
+    
+    <script defer src="../search-index.js"></script>
+</body>
+</html>

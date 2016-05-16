@@ -1,6 +1,0 @@
-target
-Cargo.lock
-callgrind.out.*
-*~
-publish-key
-publish-key.pub
