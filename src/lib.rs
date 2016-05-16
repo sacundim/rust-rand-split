@@ -33,7 +33,7 @@
 //! pair of `Rand` instances with a conventional, i.e. **sequential**
 //! PRNG:
 //! 
-//! ```rust
+//! ```ignore
 //! let mut rng = new_sequential_rng();
 //! let (a, b): (T1, T2) = Rand::rand(rng);
 //! ```
@@ -57,24 +57,35 @@
 //! logic that generates one element cannot affect the other.  This
 //! can be illustrated with our flagship unit test:
 //! 
-//! ```rust
+//! ```
+//! extern crate rand;
+//! extern crate rand_split;
+//!
+//! use rand::Rng;
+//! use rand::os::OsRng;
+//! use rand_split::{SplitRng, SplitPrf, SplitRand};
+//! use rand_split::siprng::{SipRng, SipPrf};
+//!
 //! /// When generating a pair with `SplitRand`, the value generated
 //! /// at each position in the pair should not be affected by how
 //! /// much randomness was consumed by the generation of the other.
-//! pub fn test_split_rand_independence<R: SplitRng>(rng: &mut R) {
+//! fn main() {
+//!     let mut osrng = OsRng::new().ok().expect("Could not create OsRng");
+//!     let mut rng: SipRng = osrng.gen();
+//!
 //!     // First we split off a **pseudo-random function** ("PRF")
 //!     // from the RNG, which implements the `SplitPrf` trait.  A
 //!     // PRF, in this context, is a factory that constructs further
 //!     // `SplitRng`s.
-//!     let prf: R::Prf = rng.splitn();
+//!     let prf: SipPrf = rng.splitn();
 //! 
 //!     // Now we pick a random index, and call the PRF four times
 //!     // with that index.
 //!     let i: u64 = rng.next_u64();
-//!     let mut ra: R = prf.call(i);
-//!     let mut rb: R = prf.call(i);
-//!     let mut rc: R = prf.call(i);
-//!     let mut rd: R = prf.call(i);
+//!     let mut ra: SipRng = prf.call(i);
+//!     let mut rb: SipRng = prf.call(i);
+//!     let mut rc: SipRng = prf.call(i);
+//!     let mut rd: SipRng = prf.call(i);
 //! 
 //!     // A PRF is a deterministic function from the index into fresh
 //!     // RNG instances.  So the four RNGs we just constructed are
@@ -121,6 +132,23 @@
 //!         // be in the same state for subsequent iterations to pass.
 //!     }
 //! }
+//!
+//! # fn iter_eq<I, J>(i: I, j: J) -> bool
+//! #     where I: IntoIterator,
+//! #           J: IntoIterator<Item=I::Item>,
+//! #           I::Item: Eq
+//! # {
+//! #     // make sure the iterators have equal length
+//! #     let mut i = i.into_iter();
+//! #     let mut j = j.into_iter();
+//! #     loop {
+//! #         match (i.next(), j.next()) {
+//! #             (Some(ref ei), Some(ref ej)) if ei == ej => { }
+//! #             (None, None) => return true,
+//! #             _ => return false,
+//! #         }
+//! #     }
+//! # }
 //! ```
 //! 
 //! This can be useful in programs that generate complex pseudo-random
