@@ -175,7 +175,7 @@
 //! order.
 //! 
 //!
-//! ## References:
+//! ## References
 //!
 //! * Claessen, Koen and Michał H. Pałka.  2013.  ["Splittable
 //!   Pseudorandom Number Generators using Cryptographic
