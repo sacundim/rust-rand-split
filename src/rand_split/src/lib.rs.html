@@ -563,23 +563,6 @@
 <span id="519">519</span>
 <span id="520">520</span>
 <span id="521">521</span>
-<span id="522">522</span>
-<span id="523">523</span>
-<span id="524">524</span>
-<span id="525">525</span>
-<span id="526">526</span>
-<span id="527">527</span>
-<span id="528">528</span>
-<span id="529">529</span>
-<span id="530">530</span>
-<span id="531">531</span>
-<span id="532">532</span>
-<span id="533">533</span>
-<span id="534">534</span>
-<span id="535">535</span>
-<span id="536">536</span>
-<span id="537">537</span>
-<span id="538">538</span>
 </pre><pre class='rust '>
 <span class='comment'>// Copyright 2016 Luis Casillas. See the COPYRIGHT file at the</span>
 <span class='comment'>// top-level directory of this distribution</span>
@@ -616,9 +599,24 @@
 <span class='doccomment'>//! pair of `Rand` instances with a conventional, i.e. **sequential**</span>
 <span class='doccomment'>//! PRNG:</span>
 <span class='doccomment'>//! </span>
-<span class='doccomment'>//! ```ignore</span>
-<span class='doccomment'>//! let mut rng = new_sequential_rng();</span>
-<span class='doccomment'>//! let (a, b): (T1, T2) = Rand::rand(rng);</span>
+<span class='doccomment'>//! ```should_panic</span>
+<span class='doccomment'>//! extern crate rand;</span>
+<span class='doccomment'>//! use rand::{Rng, SeedableRng, XorShiftRng, Rand, thread_rng};</span>
+<span class='doccomment'>//!</span>
+<span class='doccomment'>//! # fn main() {</span>
+<span class='doccomment'>//! // Make two PRNGs from the same seed.</span>
+<span class='doccomment'>//! let seed: [u32; 4] = thread_rng().gen();</span>
+<span class='doccomment'>//! let mut rng0: XorShiftRng = SeedableRng::from_seed(seed);</span>
+<span class='doccomment'>//! let mut rng1: XorShiftRng = SeedableRng::from_seed(seed);</span>
+<span class='doccomment'>//! </span>
+<span class='doccomment'>//! type T0 = [u64; 16];</span>
+<span class='doccomment'>//! type T1 = [u64; 32];</span>
+<span class='doccomment'>//! let (_, a): (T0, T0) = Rand::rand(&amp;mut rng0);</span>
+<span class='doccomment'>//! let (_, b): (T1, T0) = Rand::rand(&amp;mut rng1);</span>
+<span class='doccomment'>//!</span>
+<span class='doccomment'>//! // This should fail, unless you&#39;re crazy unlucky:</span>
+<span class='doccomment'>//! assert_eq!(a, b); </span>
+<span class='doccomment'>//! # }</span>
 <span class='doccomment'>//! ```</span>
 <span class='doccomment'>//! </span>
 <span class='doccomment'>//! With a sequential generator, the way this is generated typically</span>
@@ -644,78 +642,75 @@
 <span class='doccomment'>//! extern crate rand;</span>
 <span class='doccomment'>//! extern crate rand_split;</span>
 <span class='doccomment'>//!</span>
-<span class='doccomment'>//! use rand::Rng;</span>
-<span class='doccomment'>//! use rand::os::OsRng;</span>
+<span class='doccomment'>//! use rand::{Rng, thread_rng};</span>
 <span class='doccomment'>//! use rand_split::{SplitRng, SplitPrf, SplitRand};</span>
 <span class='doccomment'>//! use rand_split::siprng::{SipRng, SipPrf};</span>
 <span class='doccomment'>//!</span>
-<span class='doccomment'>//! /// When generating a pair with `SplitRand`, the value generated</span>
-<span class='doccomment'>//! /// at each position in the pair should not be affected by how</span>
-<span class='doccomment'>//! /// much randomness was consumed by the generation of the other.</span>
-<span class='doccomment'>//! fn main() {</span>
-<span class='doccomment'>//!     let mut osrng = OsRng::new().ok().expect(&quot;Could not create OsRng&quot;);</span>
-<span class='doccomment'>//!     let mut rng: SipRng = osrng.gen();</span>
+<span class='doccomment'>//! # fn main() {</span>
+<span class='doccomment'>//! // `SipRng` has a `Rand` instance so we can get a randomly </span>
+<span class='doccomment'>//! // seeded one this way:</span>
+<span class='doccomment'>//! let mut rng: SipRng = thread_rng().gen();</span>
 <span class='doccomment'>//!</span>
-<span class='doccomment'>//!     // First we split off a **pseudo-random function** (&quot;PRF&quot;)</span>
-<span class='doccomment'>//!     // from the RNG, which implements the `SplitPrf` trait.  A</span>
-<span class='doccomment'>//!     // PRF, in this context, is a factory that constructs further</span>
-<span class='doccomment'>//!     // `SplitRng`s.</span>
-<span class='doccomment'>//!     let prf: SipPrf = rng.splitn();</span>
+<span class='doccomment'>//! // We split off a **pseudo-random function** (&quot;PRF&quot;) from</span>
+<span class='doccomment'>//! // the RNG.  PRFs implement the `SplitPrf` trait.</span>
+<span class='doccomment'>//! let prf: SipPrf = rng.splitn();</span>
 <span class='doccomment'>//! </span>
-<span class='doccomment'>//!     // Now we pick a random index, and call the PRF four times</span>
-<span class='doccomment'>//!     // with that index.</span>
-<span class='doccomment'>//!     let i: u64 = rng.next_u64();</span>
-<span class='doccomment'>//!     let mut ra: SipRng = prf.call(i);</span>
-<span class='doccomment'>//!     let mut rb: SipRng = prf.call(i);</span>
-<span class='doccomment'>//!     let mut rc: SipRng = prf.call(i);</span>
-<span class='doccomment'>//!     let mut rd: SipRng = prf.call(i);</span>
+<span class='doccomment'>//! // PRFs serve as factories that construct further `SplitRng`s.</span>
+<span class='doccomment'>//! // So now we pick a random index and call the PRF four times</span>
+<span class='doccomment'>//! // with that index to get four new `SipRng`s.</span>
+<span class='doccomment'>//! let i: u64 = rng.next_u64();</span>
+<span class='doccomment'>//! let mut ra: SipRng = prf.call(i);</span>
+<span class='doccomment'>//! let mut rb: SipRng = prf.call(i);</span>
+<span class='doccomment'>//! let mut rc: SipRng = prf.call(i);</span>
+<span class='doccomment'>//! let mut rd: SipRng = prf.call(i);</span>
 <span class='doccomment'>//! </span>
-<span class='doccomment'>//!     // A PRF is a deterministic function from the index into fresh</span>
-<span class='doccomment'>//!     // RNG instances.  So the four RNGs we just constructed are</span>
-<span class='doccomment'>//!     // guaranteed to be in the same initial state.  (Note that this</span>
-<span class='doccomment'>//!     // can be used to randomly generate pure functions!)</span>
-<span class='doccomment'>//!     assert!(iter_eq(ra.gen_ascii_chars().take(100),</span>
-<span class='doccomment'>//!                     rb.gen_ascii_chars().take(100)));</span>
-<span class='doccomment'>//!     assert!(iter_eq(rc.gen_ascii_chars().take(100),</span>
-<span class='doccomment'>//!                     rd.gen_ascii_chars().take(100)));</span>
-<span class='doccomment'>//!     assert!(iter_eq(ra.gen_ascii_chars().take(100),</span>
-<span class='doccomment'>//!                     rc.gen_ascii_chars().take(100)));</span>
-<span class='doccomment'>//!     assert!(iter_eq(rb.gen_ascii_chars().take(100),</span>
-<span class='doccomment'>//!                     rd.gen_ascii_chars().take(100)));</span>
+<span class='doccomment'>//! // A PRF is a function that captures a &quot;frozen&quot; state from</span>
+<span class='doccomment'>//! // its parent RNG, and constructs further RNG instances </span>
+<span class='doccomment'>//! // whose initial states depend only on that frozen state and </span>
+<span class='doccomment'>//! // the index supplied to `call`.  So the four RNGs we just</span>
+<span class='doccomment'>//! // constructed are guaranteed to be in the same initial state.</span>
+<span class='doccomment'>//! // And behold, they produce identical outputs!</span>
+<span class='doccomment'>//! assert!(iter_eq(ra.gen_ascii_chars().take(100),</span>
+<span class='doccomment'>//!                 rb.gen_ascii_chars().take(100)));</span>
+<span class='doccomment'>//! assert!(iter_eq(rc.gen_ascii_chars().take(100),</span>
+<span class='doccomment'>//!                 rd.gen_ascii_chars().take(100)));</span>
+<span class='doccomment'>//! assert!(iter_eq(ra.gen_ascii_chars().take(100),</span>
+<span class='doccomment'>//!                 rc.gen_ascii_chars().take(100)));</span>
+<span class='doccomment'>//! assert!(iter_eq(rb.gen_ascii_chars().take(100),</span>
+<span class='doccomment'>//!                 rd.gen_ascii_chars().take(100)));</span>
 <span class='doccomment'>//! </span>
+<span class='doccomment'>//! // Now for the main course.  We pick two distinct types that</span>
+<span class='doccomment'>//! // implement the `SplitRand` trait.  We choose them so that</span>
+<span class='doccomment'>//! // generating a value of either type advances the state of a</span>
+<span class='doccomment'>//! // sequential RNG by a different amount than the other.</span>
+<span class='doccomment'>//! type T0 = [u64; 16];</span>
+<span class='doccomment'>//! type T1 = [u64; 32];</span>
 <span class='doccomment'>//! </span>
-<span class='doccomment'>//!     // We pick two distinct types that implement the `SplitRand`</span>
-<span class='doccomment'>//!     // trait.  We choose them so that generating a value of each</span>
-<span class='doccomment'>//!     // type advances the state of a sequential RNG by a different</span>
-<span class='doccomment'>//!     // amount than the other.</span>
-<span class='doccomment'>//!     type T0 = [u64; 16];</span>
-<span class='doccomment'>//!     type T1 = [u64; 32];</span>
+<span class='doccomment'>//! for _ in 0..100 {</span>
+<span class='doccomment'>//!     // Then we use our four initially-identical RNGs to</span>
+<span class='doccomment'>//!     // generate tuples representing all four combinations of</span>
+<span class='doccomment'>//!     // our two element types:</span>
+<span class='doccomment'>//!     let (a0, a1): (T0, T0) = SplitRand::split_rand(&amp;mut ra);</span>
+<span class='doccomment'>//!     let (b0, b1): (T0, T1) = SplitRand::split_rand(&amp;mut rb);</span>
+<span class='doccomment'>//!     let (c0, c1): (T1, T0) = SplitRand::split_rand(&amp;mut rc);</span>
+<span class='doccomment'>//!     let (d0, d1): (T1, T1) = SplitRand::split_rand(&amp;mut rd);</span>
+<span class='doccomment'>//!     </span>
+<span class='doccomment'>//!     // And here we test that the value of each element</span>
+<span class='doccomment'>//!     // generated depends on its type and its position within</span>
+<span class='doccomment'>//!     // its pair, but not on what was generated for the other</span>
+<span class='doccomment'>//!     // element.</span>
+<span class='doccomment'>//!     assert_eq!(a0, b0);</span>
+<span class='doccomment'>//!     assert_eq!(a1, c1);</span>
+<span class='doccomment'>//!     assert_eq!(b1, d1);</span>
+<span class='doccomment'>//!     assert_eq!(c0, d0);</span>
 <span class='doccomment'>//! </span>
-<span class='doccomment'>//!     for _ in 0..100 {</span>
-<span class='doccomment'>//!         // Now we use our four initially-identical RNGs to</span>
-<span class='doccomment'>//!         // generate tuples representing all four combinations of</span>
-<span class='doccomment'>//!         // our two element types:</span>
-<span class='doccomment'>//!         let (a0, a1): (T0, T0) = SplitRand::split_rand(&amp;mut ra);</span>
-<span class='doccomment'>//!         let (b0, b1): (T0, T1) = SplitRand::split_rand(&amp;mut rb);</span>
-<span class='doccomment'>//!         let (c0, c1): (T1, T0) = SplitRand::split_rand(&amp;mut rc);</span>
-<span class='doccomment'>//!         let (d0, d1): (T1, T1) = SplitRand::split_rand(&amp;mut rd);</span>
-<span class='doccomment'>//!         </span>
-<span class='doccomment'>//!         // And here we test that the value of each element</span>
-<span class='doccomment'>//!         // generated depends on its type and its position within</span>
-<span class='doccomment'>//!         // its pair, but not on what was generated for the other</span>
-<span class='doccomment'>//!         // element.</span>
-<span class='doccomment'>//!         assert_eq!(a0, b0);</span>
-<span class='doccomment'>//!         assert_eq!(a1, c1);</span>
-<span class='doccomment'>//!         assert_eq!(b1, d1);</span>
-<span class='doccomment'>//!         assert_eq!(c0, d0);</span>
-<span class='doccomment'>//! </span>
-<span class='doccomment'>//!         // Finally, note that we&#39;re doing this inside of a loop</span>
-<span class='doccomment'>//!         // and reusing the same four generators for each</span>
-<span class='doccomment'>//!         // iteration.  So at this point all four generators must</span>
-<span class='doccomment'>//!         // be in the same state for subsequent iterations to pass.</span>
-<span class='doccomment'>//!     }</span>
+<span class='doccomment'>//!     // Finally, note that we&#39;re doing this inside of a loop</span>
+<span class='doccomment'>//!     // and reusing the same four RNGs on each iteration.  So </span>
+<span class='doccomment'>//!     // at this point all four generators must end the same</span>
+<span class='doccomment'>//!     // state or subsequent iterations will fail.</span>
 <span class='doccomment'>//! }</span>
-<span class='doccomment'>//!</span>
+<span class='doccomment'>//! # }</span>
+<span class='doccomment'>//! #</span>
 <span class='doccomment'>//! # fn iter_eq&lt;I, J&gt;(i: I, j: J) -&gt; bool</span>
 <span class='doccomment'>//! #     where I: IntoIterator,</span>
 <span class='doccomment'>//! #           J: IntoIterator&lt;Item=I::Item&gt;,</span>
@@ -962,29 +957,17 @@
     <span class='kw'>use</span> <span class='ident'>rand</span>::<span class='ident'>SeedableRng</span>;
     <span class='kw'>use</span> ::{<span class='ident'>SplitRng</span>, <span class='ident'>SplitPrf</span>, <span class='ident'>SplitRand</span>};
 
-
-    <span class='doccomment'>/// When generating a pair with `SplitRand`, the value generated</span>
-    <span class='doccomment'>/// at each position in the pair should not be affected by how</span>
-    <span class='doccomment'>/// much randomness was consumed by the generation of the other.</span>
+    <span class='doccomment'>/// Test that generation of tuple elements with `SplitRand` is</span>
+    <span class='doccomment'>/// independent.</span>
     <span class='kw'>pub</span> <span class='kw'>fn</span> <span class='ident'>test_split_rand_independence</span><span class='op'>&lt;</span><span class='ident'>R</span>: <span class='ident'>SplitRng</span><span class='op'>&gt;</span>(<span class='ident'>rng</span>: <span class='kw-2'>&amp;</span><span class='kw-2'>mut</span> <span class='ident'>R</span>) {
-        <span class='comment'>// First we split off a **pseudo-random function** (&quot;PRF&quot;)</span>
-        <span class='comment'>// from the RNG, which implements the `SplitPrf` trait.  A</span>
-        <span class='comment'>// PRF, in this context, is a factory that constructs further</span>
-        <span class='comment'>// `SplitRng`s.</span>
         <span class='kw'>let</span> <span class='ident'>prf</span>: <span class='ident'>R</span>::<span class='ident'>Prf</span> <span class='op'>=</span> <span class='ident'>rng</span>.<span class='ident'>splitn</span>();
 
-        <span class='comment'>// Now we pick a random index, and call the PRF four times</span>
-        <span class='comment'>// with that index.</span>
         <span class='kw'>let</span> <span class='ident'>i</span>: <span class='ident'>u64</span> <span class='op'>=</span> <span class='ident'>rng</span>.<span class='ident'>next_u64</span>();
         <span class='kw'>let</span> <span class='kw-2'>mut</span> <span class='ident'>ra</span>: <span class='ident'>R</span> <span class='op'>=</span> <span class='ident'>prf</span>.<span class='ident'>call</span>(<span class='ident'>i</span>);
         <span class='kw'>let</span> <span class='kw-2'>mut</span> <span class='ident'>rb</span>: <span class='ident'>R</span> <span class='op'>=</span> <span class='ident'>prf</span>.<span class='ident'>call</span>(<span class='ident'>i</span>);
         <span class='kw'>let</span> <span class='kw-2'>mut</span> <span class='ident'>rc</span>: <span class='ident'>R</span> <span class='op'>=</span> <span class='ident'>prf</span>.<span class='ident'>call</span>(<span class='ident'>i</span>);
         <span class='kw'>let</span> <span class='kw-2'>mut</span> <span class='ident'>rd</span>: <span class='ident'>R</span> <span class='op'>=</span> <span class='ident'>prf</span>.<span class='ident'>call</span>(<span class='ident'>i</span>);
 
-        <span class='comment'>// A PRF is a deterministic function from the index into fresh</span>
-        <span class='comment'>// RNG instances.  So the four RNGs we just constructed are</span>
-        <span class='comment'>// guaranteed to be in the same initial state.  (Note that this</span>
-        <span class='comment'>// can be used to randomly generate pure functions!)</span>
         <span class='macro'>assert</span><span class='macro'>!</span>(<span class='ident'>iter_eq</span>(<span class='ident'>ra</span>.<span class='ident'>gen_ascii_chars</span>().<span class='ident'>take</span>(<span class='number'>100</span>),
                         <span class='ident'>rb</span>.<span class='ident'>gen_ascii_chars</span>().<span class='ident'>take</span>(<span class='number'>100</span>)));
         <span class='macro'>assert</span><span class='macro'>!</span>(<span class='ident'>iter_eq</span>(<span class='ident'>rc</span>.<span class='ident'>gen_ascii_chars</span>().<span class='ident'>take</span>(<span class='number'>100</span>),
@@ -995,35 +978,18 @@
                         <span class='ident'>rd</span>.<span class='ident'>gen_ascii_chars</span>().<span class='ident'>take</span>(<span class='number'>100</span>)));
 
 
-        <span class='comment'>// We pick two distinct types that implement the `SplitRand`</span>
-        <span class='comment'>// trait.  We choose them so that generating a value of each</span>
-        <span class='comment'>// type advances the state of a sequential RNG by a different</span>
-        <span class='comment'>// amount than the other.</span>
         <span class='kw'>type</span> <span class='ident'>T0</span> <span class='op'>=</span> [<span class='ident'>u64</span>; <span class='number'>16</span>];
         <span class='kw'>type</span> <span class='ident'>T1</span> <span class='op'>=</span> [<span class='ident'>u64</span>; <span class='number'>32</span>];
-
         <span class='kw'>for</span> _ <span class='kw'>in</span> <span class='number'>0</span>..<span class='number'>100</span> {
-            <span class='comment'>// Now we use our four initially-identical RNGs to</span>
-            <span class='comment'>// generate tuples representing all four combinations of</span>
-            <span class='comment'>// our two element types:</span>
             <span class='kw'>let</span> (<span class='ident'>a0</span>, <span class='ident'>a1</span>): (<span class='ident'>T0</span>, <span class='ident'>T0</span>) <span class='op'>=</span> <span class='ident'>SplitRand</span>::<span class='ident'>split_rand</span>(<span class='kw-2'>&amp;</span><span class='kw-2'>mut</span> <span class='ident'>ra</span>);
             <span class='kw'>let</span> (<span class='ident'>b0</span>, <span class='ident'>b1</span>): (<span class='ident'>T0</span>, <span class='ident'>T1</span>) <span class='op'>=</span> <span class='ident'>SplitRand</span>::<span class='ident'>split_rand</span>(<span class='kw-2'>&amp;</span><span class='kw-2'>mut</span> <span class='ident'>rb</span>);
             <span class='kw'>let</span> (<span class='ident'>c0</span>, <span class='ident'>c1</span>): (<span class='ident'>T1</span>, <span class='ident'>T0</span>) <span class='op'>=</span> <span class='ident'>SplitRand</span>::<span class='ident'>split_rand</span>(<span class='kw-2'>&amp;</span><span class='kw-2'>mut</span> <span class='ident'>rc</span>);
             <span class='kw'>let</span> (<span class='ident'>d0</span>, <span class='ident'>d1</span>): (<span class='ident'>T1</span>, <span class='ident'>T1</span>) <span class='op'>=</span> <span class='ident'>SplitRand</span>::<span class='ident'>split_rand</span>(<span class='kw-2'>&amp;</span><span class='kw-2'>mut</span> <span class='ident'>rd</span>);
             
-            <span class='comment'>// And here we test that the value of each element</span>
-            <span class='comment'>// generated depends on its type and its position within</span>
-            <span class='comment'>// its pair, but not on what was generated for the other</span>
-            <span class='comment'>// element.</span>
             <span class='macro'>assert_eq</span><span class='macro'>!</span>(<span class='ident'>a0</span>, <span class='ident'>b0</span>);
             <span class='macro'>assert_eq</span><span class='macro'>!</span>(<span class='ident'>a1</span>, <span class='ident'>c1</span>);
             <span class='macro'>assert_eq</span><span class='macro'>!</span>(<span class='ident'>b1</span>, <span class='ident'>d1</span>);
             <span class='macro'>assert_eq</span><span class='macro'>!</span>(<span class='ident'>c0</span>, <span class='ident'>d0</span>);
-
-            <span class='comment'>// Finally, note that we&#39;re doing this inside of a loop</span>
-            <span class='comment'>// and reusing the same four generators for each</span>
-            <span class='comment'>// iteration.  So at this point all four generators must</span>
-            <span class='comment'>// be in the same state for subsequent iterations to pass.</span>
         }
     }
 
