@@ -15,3 +15,4 @@ rand = "0.3"
 
 [dev-dependencies]
 mersenne_twister = "0.3.0"
+pcg_rand = "0.5.0"

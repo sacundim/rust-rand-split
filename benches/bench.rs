@@ -1,6 +1,7 @@
 #![feature(test)]
 
 extern crate mersenne_twister;
+extern crate pcg_rand as pcg;
 extern crate rand;
 extern crate rand_split;
 extern crate test;
@@ -8,6 +9,7 @@ extern crate test;
 const RAND_BENCH_N: u64 = 1000;
 
 use mersenne_twister::{MT19937, MT19937_64};
+use pcg::Pcg32;
 use rand::{Rng, SeedableRng, OsRng, StdRng, XorShiftRng};
 use rand::chacha::ChaChaRng;
 use rand::isaac::{IsaacRng, Isaac64Rng};
@@ -132,4 +134,18 @@ fn rand_mt19937_64(b: &mut Bencher) {
     b.bytes = size_of::<usize>() as u64 * RAND_BENCH_N;
 }
 
+/*
+ * pcg_rand crate
+ */
+
+#[bench]
+fn rand_pgc32(b: &mut Bencher) {
+    let mut rng: Pcg32 = OsRng::new().unwrap().gen();
+    b.iter(|| {
+        for _ in 0..RAND_BENCH_N {
+            black_box(rng.gen::<usize>());
+        }
+    });
+    b.bytes = size_of::<usize>() as u64 * RAND_BENCH_N;
+}
 
