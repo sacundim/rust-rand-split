@@ -5,6 +5,7 @@
 extern crate clap;
 extern crate crypto;
 extern crate mersenne_twister;
+extern crate pcg_rand as pcg;
 extern crate rand;
 extern crate rand_split;
 extern crate void;
@@ -14,6 +15,7 @@ use clap::{App, SubCommand};
 use crypto::fortuna::{self, Fortuna};
 
 use mersenne_twister::{MersenneTwister, MT19937, MT19937_64};
+use pcg::Pcg32;
 
 use rand::{Rand, Rng, SeedableRng, StdRng, XorShiftRng};
 use rand::chacha::ChaChaRng;
@@ -64,6 +66,8 @@ fn dispatch() -> io::Result<Void> {
                     .about("Mersenne Twister (32-bit)"))
         .subcommand(SubCommand::with_name("mt19937_64")
                     .about("Mersenne Twister (64-bit)"))
+        .subcommand(SubCommand::with_name("pcg32")
+                    .about("PCG 32"))
         .subcommand(SubCommand::with_name("siprng")
                     .about("The siprng generator, from rand-split"))
         ;
@@ -79,6 +83,7 @@ fn dispatch() -> io::Result<Void> {
         Some("mt") => try!(run_rng::<MersenneTwister>()),
         Some("mt19937") => try!(run_rng::<MT19937>()),
         Some("mt19937_64") => try!(run_rng::<MT19937_64>()),
+        Some("pcg32") => try!(run_rng::<Pcg32>()),
         Some("fortuna") => try!(run_fortuna()),
         Some("siprng") => try!(run_rng::<SipRng>()),
         _ => print_usage(matches.usage()),
