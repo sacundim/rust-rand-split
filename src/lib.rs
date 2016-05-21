@@ -76,15 +76,15 @@
 //! extern crate rand;
 //! extern crate rand_split;
 //!
-//! use rand::{Rng, XorShiftRng, thread_rng};
+//! use rand::{Rng, Isaac64Rng, thread_rng};
 //! use rand_split::{SplitRng, SplitPrf, SplitRand, Split, Prf};
 //!
 //! # fn main() {
-//! // We will be using the `rand` crate's `XorShiftRng`, but
+//! // We will be using the `rand` crate's `Isaac64Rng`, but
 //! // wrapped with a `Split` wrapper that adds splittability
 //! // on top of it.
-//! type OurRng = Split<XorShiftRng>;
-//! type OurPrf = Prf<XorShiftRng>;
+//! type OurRng = Split<Isaac64Rng>;
+//! type OurPrf = Prf<Isaac64Rng>;
 //!
 //! // The library's RNGs have `Rand` instances, so we can get
 //! // a randomly seeded RNG this way:
@@ -97,7 +97,7 @@
 //! // PRFs serve as factories that construct further `SplitRng`s.
 //! // So now we pick a random index and call the PRF four times
 //! // with that index to get four new RNGs.
-//! let i: u64 = rng.next_u64();
+//! let i: u32 = rng.gen();
 //! let mut ra: OurRng = prf.call(i);
 //! let mut rb: OurRng = prf.call(i);
 //! let mut rc: OurRng = prf.call(i);
@@ -249,7 +249,7 @@ pub trait SplitRng : Rng + Sized {
 /// technical meaning in cryptograpy, **no security claim is
 /// implied here**.
 pub trait SplitPrf<Rng> {
-    fn call(&self, i: u64) -> Rng;
+    fn call(&self, i: u32) -> Rng;
 }
 
 /// A type that can be randomly generated from a `SplitRand`.
@@ -286,10 +286,13 @@ impl<A: Hash, B: Rand> SplitRand for Box<Fn(A) -> B> {
         let (k0, k1) = (rng.next_u64(), rng.next_u64());
         let prf = rng.splitn();
         Box::new(move |arg: A| {
-            // TODO: is there a way not to hardcode `SipHasher` here?
-            let mut hasher = SipHasher::new_with_keys(k0, k1);
-            arg.hash(&mut hasher);
-            Rand::rand(&mut prf.call(hasher.finish()))
+            let i: u32 = {
+                // TODO: is there a way not to hardcode `SipHasher` here?
+                let mut hasher = SipHasher::new_with_keys(k0, k1);
+                arg.hash(&mut hasher);
+                (hasher.finish() & 0xffff_ffff) as u32
+            };
+            Rand::rand(&mut prf.call(i))
         })
     }
 
@@ -418,7 +421,7 @@ mod tests {
     pub fn test_split_rand_independence<R: SplitRng>(rng: &mut R) {
         let prf: R::Prf = rng.splitn();
 
-        let i: u64 = rng.next_u64();
+        let i: u32 = rng.gen();
         let mut ra: R = prf.call(i);
         let mut rb: R = prf.call(i);
         let mut rc: R = prf.call(i);
@@ -457,7 +460,7 @@ mod tests {
         type F = Box<Fn([u64; 8]) -> [u64; 8]>;
 
         let prf = rng.splitn();
-        let i = rng.next_u64();
+        let i = rng.gen();
 
         let fa: F = SplitRand::split_rand(&mut prf.call(i));
         let fb: F = SplitRand::split_rand(&mut prf.call(i));
@@ -474,7 +477,7 @@ mod tests {
     /// sequential results.
     pub fn test_split_rand_split<R: SplitRng>(rng: &mut R) {
         let prf = rng.splitn();
-        let i = rng.next_u64();
+        let i = rng.gen();
         let mut ra0 = prf.call(i);
         let mut rb0 = prf.call(i);
 
