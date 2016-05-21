@@ -302,7 +302,7 @@
           <span class='ident'>F</span>: <span class='ident'>SplitPrf</span><span class='op'>&lt;</span><span class='ident'>S</span><span class='op'>&gt;</span>,
           <span class='ident'>R</span>: <span class='ident'>Rand</span>
 {
-    <span class='kw'>fn</span> <span class='ident'>call</span>(<span class='kw-2'>&amp;</span><span class='self'>self</span>, <span class='ident'>i</span>: <span class='ident'>u64</span>) <span class='op'>-&gt;</span> <span class='ident'>Split</span><span class='op'>&lt;</span><span class='ident'>S</span>, <span class='ident'>R</span><span class='op'>&gt;</span> {
+    <span class='kw'>fn</span> <span class='ident'>call</span>(<span class='kw-2'>&amp;</span><span class='self'>self</span>, <span class='ident'>i</span>: <span class='ident'>u32</span>) <span class='op'>-&gt;</span> <span class='ident'>Split</span><span class='op'>&lt;</span><span class='ident'>S</span>, <span class='ident'>R</span><span class='op'>&gt;</span> {
         <span class='kw'>let</span> <span class='kw-2'>mut</span> <span class='ident'>rng</span> <span class='op'>=</span> <span class='self'>self</span>.<span class='ident'>prf</span>.<span class='ident'>call</span>(<span class='ident'>i</span>);
         <span class='kw'>let</span> <span class='ident'>seq</span> <span class='op'>=</span> <span class='ident'>rng</span>.<span class='ident'>gen</span>();
         <span class='ident'>Split</span> {

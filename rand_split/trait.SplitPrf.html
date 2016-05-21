@@ -47,9 +47,9 @@
                    <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">
                        [<span class='inner'>&#x2212;</span>]
                    </a>
-               </span><a id='src-161' class='srclink' href='../src/rand_split/src/lib.rs.html#251-253' title='goto source code'>[src]</a></span></h1>
+               </span><a id='src-163' class='srclink' href='../src/rand_split/src/lib.rs.html#251-253' title='goto source code'>[src]</a></span></h1>
 <pre class='rust trait'>pub trait SplitPrf&lt;Rng&gt; {
-    fn <a href='#tymethod.call' class='fnname'>call</a>(&amp;self, i: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.u64.html'>u64</a>) -&gt; Rng;
+    fn <a href='#tymethod.call' class='fnname'>call</a>(&amp;self, i: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.u32.html'>u32</a>) -&gt; Rng;
 }</pre><div class='docblock'><p>Pseudo-random functions (&quot;PRFs&quot;) generated off a <code>SplitRng</code>.</p>
 
 <p>A PRF is a factory of <code>SplitRng</code>s, whose initial states are
@@ -66,7 +66,7 @@ implied here</strong>.</p>
 </div>
             <h2 id='required-methods'>Required Methods</h2>
             <div class='methods'>
-        <h3 id='tymethod.call' class='method stab '><code>fn <a href='#tymethod.call' class='fnname'>call</a>(&amp;self, i: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.u64.html'>u64</a>) -&gt; Rng</code></h3></div>
+        <h3 id='tymethod.call' class='method stab '><code>fn <a href='#tymethod.call' class='fnname'>call</a>(&amp;self, i: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.u32.html'>u32</a>) -&gt; Rng</code></h3></div>
         <h2 id='implementors'>Implementors</h2>
         <ul class='item-list' id='implementors-list'>
     <li><code>impl&lt;S, F, R&gt; SplitPrf&lt;<a class='struct' href='../rand_split/generic/struct.Split.html' title='rand_split::generic::Split'>Split</a>&lt;S, R&gt;&gt; for <a class='struct' href='../rand_split/generic/struct.Prf.html' title='rand_split::generic::Prf'>Prf</a>&lt;F, R&gt; <span class='where'>where S: <a class='trait' href='../rand_split/trait.SplitRng.html' title='rand_split::SplitRng'>SplitRng</a>, F: <a class='trait' href='../rand_split/trait.SplitPrf.html' title='rand_split::SplitPrf'>SplitPrf</a>&lt;S&gt;, R: <a class='trait' href='../rand/trait.Rand.html' title='rand::Rand'>Rand</a></span></code></li>

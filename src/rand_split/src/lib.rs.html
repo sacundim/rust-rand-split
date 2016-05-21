@@ -588,6 +588,9 @@
 <span id="544">544</span>
 <span id="545">545</span>
 <span id="546">546</span>
+<span id="547">547</span>
+<span id="548">548</span>
+<span id="549">549</span>
 </pre><pre class='rust '>
 <span class='comment'>// Copyright 2016 Luis Casillas. See the COPYRIGHT file at the</span>
 <span class='comment'>// top-level directory of this distribution</span>
@@ -667,15 +670,15 @@
 <span class='doccomment'>//! extern crate rand;</span>
 <span class='doccomment'>//! extern crate rand_split;</span>
 <span class='doccomment'>//!</span>
-<span class='doccomment'>//! use rand::{Rng, XorShiftRng, thread_rng};</span>
+<span class='doccomment'>//! use rand::{Rng, Isaac64Rng, thread_rng};</span>
 <span class='doccomment'>//! use rand_split::{SplitRng, SplitPrf, SplitRand, Split, Prf};</span>
 <span class='doccomment'>//!</span>
 <span class='doccomment'>//! # fn main() {</span>
-<span class='doccomment'>//! // We will be using the `rand` crate&#39;s `XorShiftRng`, but</span>
+<span class='doccomment'>//! // We will be using the `rand` crate&#39;s `Isaac64Rng`, but</span>
 <span class='doccomment'>//! // wrapped with a `Split` wrapper that adds splittability</span>
 <span class='doccomment'>//! // on top of it.</span>
-<span class='doccomment'>//! type OurRng = Split&lt;XorShiftRng&gt;;</span>
-<span class='doccomment'>//! type OurPrf = Prf&lt;XorShiftRng&gt;;</span>
+<span class='doccomment'>//! type OurRng = Split&lt;Isaac64Rng&gt;;</span>
+<span class='doccomment'>//! type OurPrf = Prf&lt;Isaac64Rng&gt;;</span>
 <span class='doccomment'>//!</span>
 <span class='doccomment'>//! // The library&#39;s RNGs have `Rand` instances, so we can get</span>
 <span class='doccomment'>//! // a randomly seeded RNG this way:</span>
@@ -688,7 +691,7 @@
 <span class='doccomment'>//! // PRFs serve as factories that construct further `SplitRng`s.</span>
 <span class='doccomment'>//! // So now we pick a random index and call the PRF four times</span>
 <span class='doccomment'>//! // with that index to get four new RNGs.</span>
-<span class='doccomment'>//! let i: u64 = rng.next_u64();</span>
+<span class='doccomment'>//! let i: u32 = rng.gen();</span>
 <span class='doccomment'>//! let mut ra: OurRng = prf.call(i);</span>
 <span class='doccomment'>//! let mut rb: OurRng = prf.call(i);</span>
 <span class='doccomment'>//! let mut rc: OurRng = prf.call(i);</span>
@@ -840,7 +843,7 @@
 <span class='doccomment'>/// technical meaning in cryptograpy, **no security claim is</span>
 <span class='doccomment'>/// implied here**.</span>
 <span class='kw'>pub</span> <span class='kw'>trait</span> <span class='ident'>SplitPrf</span><span class='op'>&lt;</span><span class='ident'>Rng</span><span class='op'>&gt;</span> {
-    <span class='kw'>fn</span> <span class='ident'>call</span>(<span class='kw-2'>&amp;</span><span class='self'>self</span>, <span class='ident'>i</span>: <span class='ident'>u64</span>) <span class='op'>-&gt;</span> <span class='ident'>Rng</span>;
+    <span class='kw'>fn</span> <span class='ident'>call</span>(<span class='kw-2'>&amp;</span><span class='self'>self</span>, <span class='ident'>i</span>: <span class='ident'>u32</span>) <span class='op'>-&gt;</span> <span class='ident'>Rng</span>;
 }
 
 <span class='doccomment'>/// A type that can be randomly generated from a `SplitRand`.</span>
@@ -877,10 +880,13 @@
         <span class='kw'>let</span> (<span class='ident'>k0</span>, <span class='ident'>k1</span>) <span class='op'>=</span> (<span class='ident'>rng</span>.<span class='ident'>next_u64</span>(), <span class='ident'>rng</span>.<span class='ident'>next_u64</span>());
         <span class='kw'>let</span> <span class='ident'>prf</span> <span class='op'>=</span> <span class='ident'>rng</span>.<span class='ident'>splitn</span>();
         <span class='ident'>Box</span>::<span class='ident'>new</span>(<span class='kw'>move</span> <span class='op'>|</span><span class='ident'>arg</span>: <span class='ident'>A</span><span class='op'>|</span> {
-            <span class='comment'>// TODO: is there a way not to hardcode `SipHasher` here?</span>
-            <span class='kw'>let</span> <span class='kw-2'>mut</span> <span class='ident'>hasher</span> <span class='op'>=</span> <span class='ident'>SipHasher</span>::<span class='ident'>new_with_keys</span>(<span class='ident'>k0</span>, <span class='ident'>k1</span>);
-            <span class='ident'>arg</span>.<span class='ident'>hash</span>(<span class='kw-2'>&amp;</span><span class='kw-2'>mut</span> <span class='ident'>hasher</span>);
-            <span class='ident'>Rand</span>::<span class='ident'>rand</span>(<span class='kw-2'>&amp;</span><span class='kw-2'>mut</span> <span class='ident'>prf</span>.<span class='ident'>call</span>(<span class='ident'>hasher</span>.<span class='ident'>finish</span>()))
+            <span class='kw'>let</span> <span class='ident'>i</span>: <span class='ident'>u32</span> <span class='op'>=</span> {
+                <span class='comment'>// TODO: is there a way not to hardcode `SipHasher` here?</span>
+                <span class='kw'>let</span> <span class='kw-2'>mut</span> <span class='ident'>hasher</span> <span class='op'>=</span> <span class='ident'>SipHasher</span>::<span class='ident'>new_with_keys</span>(<span class='ident'>k0</span>, <span class='ident'>k1</span>);
+                <span class='ident'>arg</span>.<span class='ident'>hash</span>(<span class='kw-2'>&amp;</span><span class='kw-2'>mut</span> <span class='ident'>hasher</span>);
+                (<span class='ident'>hasher</span>.<span class='ident'>finish</span>() <span class='kw-2'>&amp;</span> <span class='number'>0xffff_ffff</span>) <span class='kw'>as</span> <span class='ident'>u32</span>
+            };
+            <span class='ident'>Rand</span>::<span class='ident'>rand</span>(<span class='kw-2'>&amp;</span><span class='kw-2'>mut</span> <span class='ident'>prf</span>.<span class='ident'>call</span>(<span class='ident'>i</span>))
         })
     }
 
@@ -1009,7 +1015,7 @@
     <span class='kw'>pub</span> <span class='kw'>fn</span> <span class='ident'>test_split_rand_independence</span><span class='op'>&lt;</span><span class='ident'>R</span>: <span class='ident'>SplitRng</span><span class='op'>&gt;</span>(<span class='ident'>rng</span>: <span class='kw-2'>&amp;</span><span class='kw-2'>mut</span> <span class='ident'>R</span>) {
         <span class='kw'>let</span> <span class='ident'>prf</span>: <span class='ident'>R</span>::<span class='ident'>Prf</span> <span class='op'>=</span> <span class='ident'>rng</span>.<span class='ident'>splitn</span>();
 
-        <span class='kw'>let</span> <span class='ident'>i</span>: <span class='ident'>u64</span> <span class='op'>=</span> <span class='ident'>rng</span>.<span class='ident'>next_u64</span>();
+        <span class='kw'>let</span> <span class='ident'>i</span>: <span class='ident'>u32</span> <span class='op'>=</span> <span class='ident'>rng</span>.<span class='ident'>gen</span>();
         <span class='kw'>let</span> <span class='kw-2'>mut</span> <span class='ident'>ra</span>: <span class='ident'>R</span> <span class='op'>=</span> <span class='ident'>prf</span>.<span class='ident'>call</span>(<span class='ident'>i</span>);
         <span class='kw'>let</span> <span class='kw-2'>mut</span> <span class='ident'>rb</span>: <span class='ident'>R</span> <span class='op'>=</span> <span class='ident'>prf</span>.<span class='ident'>call</span>(<span class='ident'>i</span>);
         <span class='kw'>let</span> <span class='kw-2'>mut</span> <span class='ident'>rc</span>: <span class='ident'>R</span> <span class='op'>=</span> <span class='ident'>prf</span>.<span class='ident'>call</span>(<span class='ident'>i</span>);
@@ -1048,7 +1054,7 @@
         <span class='kw'>type</span> <span class='ident'>F</span> <span class='op'>=</span> <span class='ident'>Box</span><span class='op'>&lt;</span><span class='ident'>Fn</span>([<span class='ident'>u64</span>; <span class='number'>8</span>]) <span class='op'>-&gt;</span> [<span class='ident'>u64</span>; <span class='number'>8</span>]<span class='op'>&gt;</span>;
 
         <span class='kw'>let</span> <span class='ident'>prf</span> <span class='op'>=</span> <span class='ident'>rng</span>.<span class='ident'>splitn</span>();
-        <span class='kw'>let</span> <span class='ident'>i</span> <span class='op'>=</span> <span class='ident'>rng</span>.<span class='ident'>next_u64</span>();
+        <span class='kw'>let</span> <span class='ident'>i</span> <span class='op'>=</span> <span class='ident'>rng</span>.<span class='ident'>gen</span>();
 
         <span class='kw'>let</span> <span class='ident'>fa</span>: <span class='ident'>F</span> <span class='op'>=</span> <span class='ident'>SplitRand</span>::<span class='ident'>split_rand</span>(<span class='kw-2'>&amp;</span><span class='kw-2'>mut</span> <span class='ident'>prf</span>.<span class='ident'>call</span>(<span class='ident'>i</span>));
         <span class='kw'>let</span> <span class='ident'>fb</span>: <span class='ident'>F</span> <span class='op'>=</span> <span class='ident'>SplitRand</span>::<span class='ident'>split_rand</span>(<span class='kw-2'>&amp;</span><span class='kw-2'>mut</span> <span class='ident'>prf</span>.<span class='ident'>call</span>(<span class='ident'>i</span>));
@@ -1065,7 +1071,7 @@
     <span class='doccomment'>/// sequential results.</span>
     <span class='kw'>pub</span> <span class='kw'>fn</span> <span class='ident'>test_split_rand_split</span><span class='op'>&lt;</span><span class='ident'>R</span>: <span class='ident'>SplitRng</span><span class='op'>&gt;</span>(<span class='ident'>rng</span>: <span class='kw-2'>&amp;</span><span class='kw-2'>mut</span> <span class='ident'>R</span>) {
         <span class='kw'>let</span> <span class='ident'>prf</span> <span class='op'>=</span> <span class='ident'>rng</span>.<span class='ident'>splitn</span>();
-        <span class='kw'>let</span> <span class='ident'>i</span> <span class='op'>=</span> <span class='ident'>rng</span>.<span class='ident'>next_u64</span>();
+        <span class='kw'>let</span> <span class='ident'>i</span> <span class='op'>=</span> <span class='ident'>rng</span>.<span class='ident'>gen</span>();
         <span class='kw'>let</span> <span class='kw-2'>mut</span> <span class='ident'>ra0</span> <span class='op'>=</span> <span class='ident'>prf</span>.<span class='ident'>call</span>(<span class='ident'>i</span>);
         <span class='kw'>let</span> <span class='kw-2'>mut</span> <span class='ident'>rb0</span> <span class='op'>=</span> <span class='ident'>prf</span>.<span class='ident'>call</span>(<span class='ident'>i</span>);
 
