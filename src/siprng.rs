@@ -173,7 +173,7 @@ impl SipRng {
     fn descend(&mut self, i: u32) {
         sip_block!(self.v0, self.v1, self.v2, self.v3, self.ctr as u64);
         sip_block!(self.v0, self.v1, self.v2, self.v3, 
-                   (i as u64) | 0xffffffff00000000);
+                   (i as u64) | 0xffff_ffff_0000_0000);
         self.len = self.len.wrapping_add(2);
         self.ctr = 0;
     }

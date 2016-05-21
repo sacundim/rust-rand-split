@@ -286,10 +286,12 @@ impl<A: Hash, B: Rand> SplitRand for Box<Fn(A) -> B> {
         let (k0, k1) = (rng.next_u64(), rng.next_u64());
         let prf = rng.splitn();
         Box::new(move |arg: A| {
-            // TODO: is there a way not to hardcode `SipHasher` here?
-            let mut hasher = SipHasher::new_with_keys(k0, k1);
-            arg.hash(&mut hasher);
-            let i = (hasher.finish() & 0xffffffff) as u32;
+            let i: u32 = {
+                // TODO: is there a way not to hardcode `SipHasher` here?
+                let mut hasher = SipHasher::new_with_keys(k0, k1);
+                arg.hash(&mut hasher);
+                (hasher.finish() & 0xffff_ffff) as u32
+            };
             Rand::rand(&mut prf.call(i))
         })
     }
