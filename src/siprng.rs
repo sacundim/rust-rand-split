@@ -8,6 +8,19 @@
 //! of the Skein hash function, however, we use SipHash as the
 //! pseudo-random function.
 //!
+//! An outline of how this generator works, conceptually:
+//!
+//! 1. We SipHash as a **pseudo-random function** (PRF), keyed with
+//!    the RNG seed (128 bits).
+//! 2. The generator (conceptually) records the history of operations
+//!    that have been invoked on it and its "parents."
+//! 3. To generate random output, this history is interpreted as a 
+//!    string and hashed.
+//!
+//! By computing the PRF incrementally this can be done in constant
+//! time and space.  I.e., the generator's state is the intermediate
+//! state of hashing the prefix of the operation string that it has
+//! seen so far.
 //!
 //! ## References
 //!
@@ -23,7 +36,8 @@
 
 use rand::{Rand, Rng, SeedableRng};
 use super::{SplitRng, SplitPrf};
-use std::{self, mem};
+use std::mem;
+use std::u32;
 
 
 /// A splittable pseudorandom generator based on SipHash.
@@ -32,8 +46,8 @@ pub struct SipRng {
     v1:  u64,
     v2:  u64,
     v3:  u64,
-    ctr: u64,
-    len: u64
+    ctr: u32,
+    len: u8
 }
 
 /// A PRF taken off a `SipRng`.
@@ -70,7 +84,8 @@ macro_rules! sip_block {
 macro_rules! sip_finish {
     ($v0: expr, $v1: expr, $v2: expr, $v3: expr, $len: expr) => {
         {
-            sip_block!($v0, $v1, $v2, $v3, $len.wrapping_shl(56));
+            sip_block!($v0, $v1, $v2, $v3, 
+                       ($len as u64).wrapping_shl(59));
             
             $v2 ^= 0xff;
             sip_round!($v0, $v1, $v2, $v3);
@@ -97,7 +112,7 @@ impl SipRng {
             v2:  k0 ^ C2,
             v3:  k1 ^ C3,
             ctr: 0,
-            len: 1
+            len: 0
         }
     }
 
@@ -112,41 +127,63 @@ impl SipRng {
         }
     }
 
+
+    /*
+     * The generator works by encoding execution traces as two kinds
+     * of 64-bit blocks that we feed to SipHash:
+     *
+     * 1. A **counter block**, that records a sequence of `advance`
+     *    operations;
+     * 2. A **split block**, that records a single split operation
+     *    and its branch number.
+     *
+     * A counter block is an u64 value that encodes a u32 counter in
+     * its least significant bits, and all zeroes in the most
+     * significant bits.  A split block is an u64 that encodes an u32
+     * branch number in its LSBs, and all ones in its MSBs.
+     */
+
+
     /// Generate one block of sequential output.
     #[inline]
     fn advance(&mut self) -> u64 {
-        sip_block!(self.v0, self.v1, self.v2, self.v3, self.ctr);
-        sip_block!(self.v0, self.v1, self.v2, self.v3, std::u64::MAX);
+        let result: u64 = {
+            // Compute a hash result.  This doesn't mutate the
+            // generator state.
+            let (mut v0, mut v1, mut v2, mut v3) = 
+                (self.v0, self.v1, self.v2, self.v3);
+            sip_block!(v0, v1, v2, v3, self.ctr as u64);
+            sip_finish!(v0, v1, v2, v3, (self.len + 1).wrapping_mul(8))
+        };
 
-        self.ctr = self.ctr.wrapping_add(1);
-        if self.ctr == 0 {
+        self.ctr = if self.ctr == u32::MAX {
+            // We're about to overflow the counter.  We avoid a
+            // cycle by descending into a branch.
             self.descend(0);
-        }
-
-        let (mut v0, mut v1, mut v2, mut v3) = 
-            (self.v0, self.v1, self.v2, self.v3);
-        sip_finish!(v0, v1, v2, v3, self.len.wrapping_mul(8))
+            0
+        } else {
+            self.ctr.wrapping_add(1)
+        };
+         
+        result
     }
 
-    /// Go into the state for the `i`th branch from this generator
-    /// state.  The "descend" name is due to Claessen & Pałka's
-    /// exposition of their splittable RNG as a tree; splitting the
-    /// generator means descending down one of the tree's branches
-    /// (indexed by `i`).
+    /// "Descend" into a numbered branch.
     #[inline]
-    fn descend(&mut self, i: u64) {
-        sip_block!(self.v0, self.v1, self.v2, self.v3, i);
-        sip_block!(self.v0, self.v1, self.v2, self.v3, 0);
-        self.len = self.len.wrapping_add(1);
+    fn descend(&mut self, i: u32) {
+        sip_block!(self.v0, self.v1, self.v2, self.v3, self.ctr as u64);
+        sip_block!(self.v0, self.v1, self.v2, self.v3, 
+                   (i as u64) | 0xffffffff00000000);
+        self.len = self.len.wrapping_add(2);
         self.ctr = 0;
     }
 
 }
 
 impl SplitPrf<SipRng> for SipPrf {
-    fn call(&self, i: u64) -> SipRng {
+    fn call(&self, i: u32) -> SipRng {
         let mut r = self.0.clone();
-        r.descend(i as u64);
+        r.descend(i);
         r
     }
 }
@@ -199,7 +236,7 @@ impl SeedableRng<(u64, u64)> for SipRng {
         self.v1 = seed.1 ^ C1;
         self.v2 = seed.0 ^ C2;
         self.v3 = seed.1 ^ C3;
-        self.len = 1;
+        self.len = 0;
         self.ctr = 0;
     }
     

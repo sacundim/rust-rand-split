@@ -102,7 +102,7 @@ impl<S, F, R> SplitPrf<Split<S, R>> for Prf<F, R>
           F: SplitPrf<S>,
           R: Rand
 {
-    fn call(&self, i: u64) -> Split<S, R> {
+    fn call(&self, i: u32) -> Split<S, R> {
         let mut rng = self.prf.call(i);
         let seq = rng.gen();
         Split {
