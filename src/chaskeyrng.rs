@@ -23,15 +23,19 @@
 
 use rand::{Rand, Rng, SeedableRng};
 use super::{SplitRng, SplitPrf};
-use std::mem;
 use std::u32;
 
 
 /// A splittable pseudorandom generator based on Chaskey.
 pub struct ChaskeyRng {
+    // The state of the splittable RNG, properly speaking.
       v: [u32; 4],
      k1: [u32; 4],
-    ctr: u64
+    ctr: u64,
+
+    // We buffer the 128-bit raw outputs of the RNG to speed it up a bit.
+    buf: [u32; 4],
+    i: usize
 }
 
 /// A PRF taken off a `ChaskeyRng`.
@@ -87,47 +91,56 @@ fn msb32(n: u64) -> u32 {
 }
 
 impl ChaskeyRng {
-    pub fn new(k: [u32; 4]) -> ChaskeyRng {
-        ChaskeyRng { 
-              v: k,
-             k1: times_two!(k),
-            ctr: 0
-        }
+    pub fn new(seed: [u32; 4]) -> ChaskeyRng {
+        let mut result = ChaskeyRng { 
+              v: [0u32; 4],
+             k1: [0u32; 4],
+            ctr: 0,
+            buf: [0u32; 4],
+              i: 0
+        };
+        result.reseed(seed);
+        result
     }
 
+    fn reseed(&mut self, seed: [u32; 4]) {
+        self.v = seed;
+        self.k1 = times_two!(seed);
+        self.ctr = 0;
+        self.advance();
+    }
+    
     fn clone(&self) -> ChaskeyRng {
         ChaskeyRng {
               v: self.v,
              k1: self.k1,
-            ctr: self.ctr
+            ctr: self.ctr,
+            buf: self.buf,
+              i: self.i
         }
     }
 
     #[inline]
-    fn advance(&mut self) -> [u32; 4] {
-        let result = {
-            let (mut v0, mut v1, mut v2, mut v3) = 
-                (self.v[0] ^ self.k1[0], 
-                 self.v[1] ^ self.k1[1],
-                 self.v[2] ^ self.k1[2] ^ lsb32(self.ctr), 
-                 self.v[3] ^ self.k1[3] ^ msb32(self.ctr));
-            permute!(v0, v1, v2, v3);
-            [v0 ^ self.k1[0], 
-             v1 ^ self.k1[1],
-             v2 ^ self.k1[2], 
-             v3 ^ self.k1[3]]
-        };
+    fn advance(&mut self) {
+        self.buf[0] = self.v[0] ^ self.k1[0];
+        self.buf[1] = self.v[0] ^ self.k1[1];
+        self.buf[2] = self.v[0] ^ self.k1[2] ^ lsb32(self.ctr);
+        self.buf[3] = self.v[0] ^ self.k1[3] ^ msb32(self.ctr);
+        permute!(self.buf[0], self.buf[1], self.buf[2], self.buf[3]);
+        self.buf[0] ^= self.k1[0];
+        self.buf[1] ^= self.k1[1];
+        self.buf[2] ^= self.k1[2];
+        self.buf[3] ^= self.k1[3];
         self.ctr = self.ctr.wrapping_add(1);
-
-        result
+        self.i = 0;
     }
 
     #[inline]
     fn descend(&mut self, i: u32) {
-        self.v = [self.v[0] ^ u32::MAX, 
-                  self.v[1] ^ i,
-                  self.v[2] ^ lsb32(self.ctr), 
-                  self.v[3] ^ msb32(self.ctr)];
+        self.v[0] ^= u32::MAX;
+        self.v[1] ^= i;
+        self.v[2] ^= lsb32(self.ctr);
+        self.v[3] ^= msb32(self.ctr);
         permute!(self.v[0], self.v[1], self.v[2], self.v[3]);
         self.ctr = 0;
     }
@@ -153,43 +166,27 @@ impl SplitRng for ChaskeyRng {
     }
 
     fn splitn(&mut self) -> ChaskeyPrf {
-        let child = self.split();
-        ChaskeyPrf(child)
+        ChaskeyPrf(self.split())
     }
 
 }
 
 impl Rng for ChaskeyRng {
     #[inline]
-    fn next_u64(&mut self) -> u64 {
-        let block = self.advance();
-        (block[0] as u64).wrapping_shl(32) | (block[1] as u64)
-    }
-    
-    #[inline]
     fn next_u32(&mut self) -> u32 {
-        self.advance()[0]
-    }
-    
-    #[inline]
-    fn fill_bytes(&mut self, dest: &mut [u8]) {
-        for chunk in dest.chunks_mut(16) {
-            let block = unsafe {
-                mem::transmute::<[u32; 4], [u8; 16]>(self.advance())
-            };
-            for i in 0..chunk.len() {
-                chunk[i] = block[i];
-            }
-        }
-    }
+        if self.i >= 4 {
+            self.advance();
+        } 
+        let result = self.buf[self.i];
+        self.i += 1;
+        result
+    }    
 }
 
 impl SeedableRng<[u32; 4]> for ChaskeyRng {
     
     fn reseed(&mut self, seed: [u32; 4]) {
-        self.v = seed;
-        self.k1 = times_two!(seed);
-        self.ctr = 0;
+        ChaskeyRng::reseed(self, seed);
     }
     
     fn from_seed(seed: [u32; 4]) -> ChaskeyRng {
