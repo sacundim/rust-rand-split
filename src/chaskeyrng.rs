@@ -1,3 +1,25 @@
+//! A splittable pseudorandom generator based on the [Chaskey
+//! MAC](http://mouha.be/chaskey/).  **This is not intended to be a
+//! cryptographically secure PRNG.**
+//!
+//! Like `SipRng`, this is broadly modeled after Claessen and Pałka's
+//! splittable PRNGs, but with a different choice of cryptographic
+//! primitive.
+//!
+//! ## References
+//!
+//! * Mouha, Nicky, Bart Mennik, Anthony Van Herrewege, Dai Watanabe,
+//!   Bart Preneet and Ingrid Verbauwhede.  2014.  ["Chaskey: An
+//!   Efficient MAC Algorithm for 32-bit
+//!   Microcontrollers."](https://eprint.iacr.org/2014/386.pdf)
+//!   Cryptology ePrint Archive, Report 2014/386.
+
+//! * Claessen, Koen and Michał H. Pałka.  2013.  ["Splittable
+//!   Pseudorandom Number Generators using Cryptographic
+//!   Hashing."](http://publications.lib.chalmers.se/records/fulltext/183348/local_183348.pdf)
+//!   *Haskell '13: Proceedings of the 2013 ACM SIGPLAN symposium on
+//!   Haskell*, pp. 47-58.
+
 
 use rand::{Rand, Rng, SeedableRng};
 use super::{SplitRng, SplitPrf};
@@ -5,7 +27,7 @@ use std::mem;
 use std::u32;
 
 
-/// A splittable pseudorandom generator based on SipHash.
+/// A splittable pseudorandom generator based on Chaskey.
 pub struct ChaskeyRng {
       v: [u32; 4],
      k1: [u32; 4],
