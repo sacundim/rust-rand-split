@@ -209,7 +209,7 @@ mod tests {
     use chaskeyrng::ChaskeyRng;
 
 
-    fn gen_siprng() -> ChaskeyRng {
+    fn gen_chaskeyrng() -> ChaskeyRng {
         let mut osrng = OsRng::new().ok().expect("Could not create OsRng");
         osrng.gen()
     }
@@ -217,17 +217,17 @@ mod tests {
 
     #[test]
     fn test_split_rand_independence() {
-        ::tests::test_split_rand_independence(&mut gen_siprng());
+        ::tests::test_split_rand_independence(&mut gen_chaskeyrng());
     }
 
     #[test]
     fn test_split_rand_closure() {
-        ::tests::test_split_rand_closure(&mut gen_siprng());
+        ::tests::test_split_rand_closure(&mut gen_chaskeyrng());
     }
 
     #[test]
     fn test_split_rand_split() {
-        ::tests::test_split_rand_split(&mut gen_siprng());
+        ::tests::test_split_rand_split(&mut gen_chaskeyrng());
     }
 
 
