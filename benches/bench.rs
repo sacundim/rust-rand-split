@@ -13,12 +13,24 @@ use rand::chacha::ChaChaRng;
 use rand::isaac::{IsaacRng, Isaac64Rng};
 use rand_split::Split;
 use rand_split::siprng::SipRng;
+use rand_split::chaskeyrng::ChaskeyRng;
 use std::mem::size_of;
 use test::{black_box, Bencher};
 
 #[bench]
 fn rand_siprng(b: &mut Bencher) {
     let mut rng: SipRng = OsRng::new().unwrap().gen();
+    b.iter(|| {
+        for _ in 0..RAND_BENCH_N {
+            black_box(rng.gen::<usize>());
+        }
+    });
+    b.bytes = size_of::<usize>() as u64 * RAND_BENCH_N;
+}
+
+#[bench]
+fn rand_chaskeyng(b: &mut Bencher) {
+    let mut rng: ChaskeyRng = OsRng::new().unwrap().gen();
     b.iter(|| {
         for _ in 0..RAND_BENCH_N {
             black_box(rng.gen::<usize>());

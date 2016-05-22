@@ -198,6 +198,7 @@ extern crate rand;
 
 pub mod generic;
 pub mod siprng;
+pub mod chaskeyrng;
 
 use rand::{Rng, Rand};
 use siprng::{SipRng, SipPrf};
