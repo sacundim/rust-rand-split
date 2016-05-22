@@ -5,8 +5,8 @@ dependencies = [
  "clap 2.5.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "mersenne_twister 0.3.0 (git+https://github.com/sacundim/rust-mersenne-twister)",
  "rand 0.3.14 (registry+https://github.com/rust-lang/crates.io-index)",
- "rand-split 0.1.0",
- "rust-crypto 0.2.35 (registry+https://github.com/rust-lang/crates.io-index)",
+ "rand-split 0.2.0",
+ "rust-crypto 0.2.36 (registry+https://github.com/rust-lang/crates.io-index)",
  "void 1.0.2 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
@@ -49,11 +49,6 @@ dependencies = [
 
 [[package]]
 name = "libc"
-version = "0.1.12"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-
-[[package]]
-name = "libc"
 version = "0.2.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 
@@ -75,18 +70,18 @@ dependencies = [
 
 [[package]]
 name = "rand-split"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "rand 0.3.14 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
 name = "rust-crypto"
-version = "0.2.35"
+version = "0.2.36"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "gcc 0.3.28 (registry+https://github.com/rust-lang/crates.io-index)",
- "libc 0.1.12 (registry+https://github.com/rust-lang/crates.io-index)",
+ "libc 0.2.11 (registry+https://github.com/rust-lang/crates.io-index)",
  "rand 0.3.14 (registry+https://github.com/rust-lang/crates.io-index)",
  "rustc-serialize 0.3.19 (registry+https://github.com/rust-lang/crates.io-index)",
  "time 0.1.35 (registry+https://github.com/rust-lang/crates.io-index)",
