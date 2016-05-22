@@ -143,6 +143,7 @@ impl ChaskeyRng {
         self.v[3] ^= msb32(self.ctr);
         permute!(self.v[0], self.v[1], self.v[2], self.v[3]);
         self.ctr = 0;
+        self.advance();
     }
 
 }
