@@ -29,13 +29,13 @@ use std::u32;
 /// A splittable pseudorandom generator based on Chaskey.
 pub struct ChaskeyRng {
     // The state of the splittable RNG, properly speaking.
-      v: [u32; 4],
-     k1: [u32; 4],
-    ctr: u64,
+    state: [u32; 4],
+       k1: [u32; 4],
+      ctr: u64,
 
     // We buffer the 128-bit raw outputs of the RNG to speed it up a bit.
-    buf: [u32; 4],
-    i: usize
+      buf: [u32; 4],
+        i: usize
 }
 
 /// A PRF taken off a `ChaskeyRng`.
@@ -45,39 +45,55 @@ pub struct ChaskeyPrf(ChaskeyRng);
 impl ChaskeyRng {
     pub fn new(seed: [u32; 4]) -> ChaskeyRng {
         let mut result = ChaskeyRng { 
-              v: seed,
-             k1: times_two(seed),
-            ctr: 0,
-            buf: [0u32; 4],
-              i: 0
+            state: seed,
+               k1: times_two(seed),
+              ctr: 0,
+
+            // We keep a buffer of the most recent words we generated
+            // so that we don't call the MAC as often.
+              buf: [0u32; 4],
+            // Current position within `buf`.
+                i: 0 
         };
         result.advance();
         result
     }
 
     fn reseed(&mut self, seed: [u32; 4]) {
-        self.v = seed;
-        self.k1 = times_two(seed);
-        self.ctr = 0;
-        self.buf = [0u32; 4];
-        self.i = 0;
+        self.state = seed;
+        self.k1    = times_two(seed);
+        self.ctr   = 0;
+        self.buf   = [0u32; 4];
+        self.i     = 0;
         self.advance();
     }
     
     fn clone(&self) -> ChaskeyRng {
         ChaskeyRng {
-              v: self.v,
-             k1: self.k1,
-            ctr: self.ctr,
-            buf: self.buf,
-              i: self.i
+            state: self.state,
+               k1: self.k1,
+              ctr: self.ctr,
+              buf: self.buf,
+                i: self.i
         }
     }
 
     #[inline]
     fn advance(&mut self) {
-        let block = [0, 0, lsb32(self.ctr), msb32(self.ctr)];
-        xor_u32x4(&mut self.buf, &block);
+        // TRICKY CODE: We do this in the `buf` of the generator, so
+        // as to leave the `state` untouched.  Effectively what we're
+        // doing here is appending the counter value to a prefix we've
+        // processed already, and finishing the Chaskey computation.
+        // So we must leave `state` untouched!
+
+        // Copy the `state` into the `buf`, and mix in the counter
+        // value.
+        self.buf[0] = self.state[0];
+        self.buf[1] = self.state[1];
+        self.buf[2] = self.state[2] ^ lsb32(self.ctr);
+        self.buf[3] = self.state[3] ^ msb32(self.ctr);
+
+        // Finalize the Chaskey computation on `buf`.
         xor_u32x4(&mut self.buf, &self.k1);
         permute8(&mut self.buf);
         xor_u32x4(&mut self.buf, &self.k1);
@@ -88,9 +104,11 @@ impl ChaskeyRng {
 
     #[inline]
     fn descend(&mut self, i: u32) {
-        let block = [u32::MAX, i, lsb32(self.ctr), msb32(self.ctr)];
-        xor_u32x4(&mut self.buf, &block);
-        permute8(&mut self.v);
+        self.state[0] ^= u32::MAX;
+        self.state[1] ^= i;
+        self.state[2] ^= lsb32(self.ctr);
+        self.state[3] ^= msb32(self.ctr);
+        permute8(&mut self.state);
 
         self.ctr = 0;
         self.advance();
