@@ -42,71 +42,25 @@ pub struct ChaskeyRng {
 pub struct ChaskeyPrf(ChaskeyRng);
 
 
-macro_rules! round {
-    ($v0: expr, $v1: expr, $v2: expr, $v3: expr) => {
-        $v0 = $v0.wrapping_add($v1); $v2 = $v2.wrapping_add($v3);
-        $v1 = $v1.rotate_left(5);    $v3 = $v3.rotate_left(8);
-        $v1 ^= $v0;                  $v3 ^= $v2;
-        $v0 = $v0.rotate_left(16);
-
-        $v2 = $v2.wrapping_add($v1); $v0 = $v0.wrapping_add($v3);
-        $v1 = $v1.rotate_left(7);    $v3 = $v3.rotate_left(13);
-        $v1 ^= $v2;                  $v3 ^= $v0;
-        $v2 = $v2.rotate_left(16);
-    }
-}
-
-macro_rules! permute {
-    ($v0: expr, $v1: expr, $v2: expr, $v3: expr) => {
-        round!($v0, $v1, $v2, $v3);
-        round!($v0, $v1, $v2, $v3);
-        round!($v0, $v1, $v2, $v3);
-        round!($v0, $v1, $v2, $v3);
-        round!($v0, $v1, $v2, $v3);
-        round!($v0, $v1, $v2, $v3);
-        round!($v0, $v1, $v2, $v3);
-        round!($v0, $v1, $v2, $v3);
-    }
-}
-
-macro_rules! times_two {
-    ($k: expr) => {
-        [$k[0].wrapping_shl(1) 
-         ^ if $k[3] < 0x8000_0000 { 0 } else { 0x87 },
-         $k[1].wrapping_shl(1) ^ 0,
-         $k[2].wrapping_shl(1) ^ 0,
-         $k[3].wrapping_shl(1) ^ 0]
-    }
-}
-
-#[inline]
-fn lsb32(n: u64) -> u32 {
-    const MASK: u64 = 0xffff_ffff;
-    (n & MASK) as u32
-}
-
-#[inline]
-fn msb32(n: u64) -> u32 {
-    lsb32(n.wrapping_shr(32))
-}
-
 impl ChaskeyRng {
     pub fn new(seed: [u32; 4]) -> ChaskeyRng {
         let mut result = ChaskeyRng { 
-              v: [0u32; 4],
-             k1: [0u32; 4],
+              v: seed,
+             k1: times_two(seed),
             ctr: 0,
             buf: [0u32; 4],
               i: 0
         };
-        result.reseed(seed);
+        result.advance();
         result
     }
 
     fn reseed(&mut self, seed: [u32; 4]) {
         self.v = seed;
-        self.k1 = times_two!(seed);
+        self.k1 = times_two(seed);
         self.ctr = 0;
+        self.buf = [0u32; 4];
+        self.i = 0;
         self.advance();
     }
     
@@ -122,26 +76,22 @@ impl ChaskeyRng {
 
     #[inline]
     fn advance(&mut self) {
-        self.buf[0] = self.v[0] ^ self.k1[0];
-        self.buf[1] = self.v[0] ^ self.k1[1];
-        self.buf[2] = self.v[0] ^ self.k1[2] ^ lsb32(self.ctr);
-        self.buf[3] = self.v[0] ^ self.k1[3] ^ msb32(self.ctr);
-        permute!(self.buf[0], self.buf[1], self.buf[2], self.buf[3]);
-        self.buf[0] ^= self.k1[0];
-        self.buf[1] ^= self.k1[1];
-        self.buf[2] ^= self.k1[2];
-        self.buf[3] ^= self.k1[3];
+        let block = [0, 0, lsb32(self.ctr), msb32(self.ctr)];
+        xor_u32x4(&mut self.buf, &block);
+        xor_u32x4(&mut self.buf, &self.k1);
+        permute8(&mut self.buf);
+        xor_u32x4(&mut self.buf, &self.k1);
+
         self.ctr = self.ctr.wrapping_add(1);
         self.i = 0;
     }
 
     #[inline]
     fn descend(&mut self, i: u32) {
-        self.v[0] ^= u32::MAX;
-        self.v[1] ^= i;
-        self.v[2] ^= lsb32(self.ctr);
-        self.v[3] ^= msb32(self.ctr);
-        permute!(self.v[0], self.v[1], self.v[2], self.v[3]);
+        let block = [u32::MAX, i, lsb32(self.ctr), msb32(self.ctr)];
+        xor_u32x4(&mut self.buf, &block);
+        permute8(&mut self.v);
+
         self.ctr = 0;
         self.advance();
     }
@@ -199,6 +149,73 @@ impl Rand for ChaskeyRng {
     fn rand<R: Rng>(other: &mut R) -> ChaskeyRng {
         ChaskeyRng::new(other.gen::<[u32; 4]>())
     }
+}
+
+
+/*
+ * Chaskey's building blocks.
+ */
+
+/// Function used in the Chaskey key schedule.
+#[inline(always)]
+pub fn times_two(key: [u32; 4]) -> [u32; 4] {
+    const C: [u32; 2] = [0x00, 0x87];
+    [key[0].wrapping_shl(1) ^ C[key[3].wrapping_shr(31) as usize],
+     key[1].wrapping_shl(1) ^ key[0].wrapping_shr(31),
+     key[2].wrapping_shl(1) ^ key[1].wrapping_shr(31),
+     key[3].wrapping_shl(1) ^ key[2].wrapping_shr(31)]
+}
+
+/// XOR a `[u32; 4]` value into the Chaskey state.
+#[inline(always)]
+pub fn xor_u32x4(state: &mut [u32; 4], block: &[u32; 4]) {
+    state[0] ^= block[0];
+    state[1] ^= block[1];
+    state[2] ^= block[2];
+    state[3] ^= block[3];
+}
+
+// The original Chaskey permutation (8 rounds).
+#[inline(always)]
+pub fn permute8(state: &mut [u32; 4]) {
+    permute4(state); permute4(state);
+}
+
+#[inline(always)]
+fn permute4(state: &mut [u32; 4]) {
+    round(state); round(state); 
+    round(state); round(state);
+}
+
+/// The Chaskey round function.
+#[inline(always)]
+pub fn round(v: &mut [u32; 4]) {
+    v[0]  = v[0].wrapping_add(v[1]); v[2]  = v[2].wrapping_add(v[3]);
+    v[1]  = v[1].rotate_left(5);     v[3]  = v[3].rotate_left(8);
+    v[1] ^= v[0];                    v[3] ^= v[2];
+    v[0]  = v[0].rotate_left(16);
+    
+    v[2]  = v[2].wrapping_add(v[1]); v[0]  = v[0].wrapping_add(v[3]);
+    v[1]  = v[1].rotate_left(7);     v[3]  = v[3].rotate_left(13);
+    v[1] ^= v[2];                    v[3] ^= v[0];
+    v[2]  = v[2].rotate_left(16);    
+}
+
+/*
+ * Utility functions.
+ */
+
+/// Take the least 32 significant bits of an `u64`.
+#[inline(always)]
+fn lsb32(n: u64) -> u32 {
+    const MASK: u64 = 0xffff_ffff;
+    (n & MASK) as u32
+}
+
+/// Take the most 32 significant bits of an `u64`.
+#[inline(always)]
+fn msb32(n: u64) -> u32 {
+    lsb32(n.wrapping_shr(32))
 }
 
 
