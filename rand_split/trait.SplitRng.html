@@ -47,7 +47,7 @@
                    <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">
                        [<span class='inner'>&#x2212;</span>]
                    </a>
-               </span><a id='src-154' class='srclink' href='../src/rand_split/src/lib.rs.html#215-238' title='goto source code'>[src]</a></span></h1>
+               </span><a id='src-244' class='srclink' href='../src/rand_split/src/lib.rs.html#216-239' title='goto source code'>[src]</a></span></h1>
 <pre class='rust trait'>pub trait SplitRng: <a class='trait' href='../rand/trait.Rng.html' title='rand::Rng'>Rng</a> + <a class='trait' href='https://doc.rust-lang.org/nightly/core/marker/trait.Sized.html' title='core::marker::Sized'>Sized</a> {
     type <a href='#associatedtype.Prf' class='type'>Prf</a>: <a class='trait' href='../rand_split/trait.SplitPrf.html' title='rand_split::SplitPrf'>SplitPrf</a>&lt;Self&gt;;
     fn <a href='#tymethod.splitn' class='fnname'>splitn</a>(&amp;mut self) -&gt; Self::<a class='trait' href='../rand_split/trait.SplitRng.html' title='rand_split::SplitRng'>Prf</a>;
@@ -83,6 +83,7 @@ implied here</strong>.</p>
         <ul class='item-list' id='implementors-list'>
     <li><code>impl&lt;S, R&gt; SplitRng for <a class='struct' href='../rand_split/generic/struct.Split.html' title='rand_split::generic::Split'>Split</a>&lt;S, R&gt; <span class='where'>where S: <a class='trait' href='../rand_split/trait.SplitRng.html' title='rand_split::SplitRng'>SplitRng</a>, R: <a class='trait' href='../rand/trait.Rng.html' title='rand::Rng'>Rng</a> + <a class='trait' href='../rand/trait.Rand.html' title='rand::Rand'>Rand</a></span></code></li>
 <li><code>impl SplitRng for <a class='struct' href='../rand_split/siprng/struct.SipRng.html' title='rand_split::siprng::SipRng'>SipRng</a></code></li>
+<li><code>impl SplitRng for <a class='struct' href='../rand_split/chaskeyrng/struct.ChaskeyRng.html' title='rand_split::chaskeyrng::ChaskeyRng'>ChaskeyRng</a></code></li>
 </ul><script type="text/javascript" async
                          src="../implementors/rand_split/trait.SplitRng.js">
                  </script></section>

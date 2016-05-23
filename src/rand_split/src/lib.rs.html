@@ -591,6 +591,7 @@
 <span id="547">547</span>
 <span id="548">548</span>
 <span id="549">549</span>
+<span id="550">550</span>
 </pre><pre class='rust '>
 <span class='comment'>// Copyright 2016 Luis Casillas. See the COPYRIGHT file at the</span>
 <span class='comment'>// top-level directory of this distribution</span>
@@ -792,17 +793,18 @@
 
 <span class='kw'>pub</span> <span class='kw'>mod</span> <span class='ident'>generic</span>;
 <span class='kw'>pub</span> <span class='kw'>mod</span> <span class='ident'>siprng</span>;
+<span class='kw'>pub</span> <span class='kw'>mod</span> <span class='ident'>chaskeyrng</span>;
 
 <span class='kw'>use</span> <span class='ident'>rand</span>::{<span class='ident'>Rng</span>, <span class='ident'>Rand</span>};
-<span class='kw'>use</span> <span class='ident'>siprng</span>::{<span class='ident'>SipRng</span>, <span class='ident'>SipPrf</span>};
+<span class='kw'>use</span> <span class='ident'>chaskeyrng</span>::{<span class='ident'>ChaskeyRng</span>, <span class='ident'>ChaskeyPrf</span>};
 <span class='kw'>use</span> <span class='ident'>std</span>::<span class='ident'>hash</span>::{<span class='ident'>Hash</span>, <span class='ident'>Hasher</span>, <span class='ident'>SipHasher</span>};
 
 
 <span class='doccomment'>/// A wrapper that generically adds splittability to RNGs.</span>
-<span class='kw'>pub</span> <span class='kw'>type</span> <span class='ident'>Split</span><span class='op'>&lt;</span><span class='ident'>Rng</span><span class='op'>&gt;</span> <span class='op'>=</span> <span class='ident'>generic</span>::<span class='ident'>Split</span><span class='op'>&lt;</span><span class='ident'>SipRng</span>, <span class='ident'>Rng</span><span class='op'>&gt;</span>;
+<span class='kw'>pub</span> <span class='kw'>type</span> <span class='ident'>Split</span><span class='op'>&lt;</span><span class='ident'>Rng</span><span class='op'>&gt;</span> <span class='op'>=</span> <span class='ident'>generic</span>::<span class='ident'>Split</span><span class='op'>&lt;</span><span class='ident'>ChaskeyRng</span>, <span class='ident'>Rng</span><span class='op'>&gt;</span>;
 
 <span class='doccomment'>/// The pseudo-random functions of a generic `Split` RNG.</span>
-<span class='kw'>pub</span> <span class='kw'>type</span> <span class='ident'>Prf</span><span class='op'>&lt;</span><span class='ident'>Rng</span><span class='op'>&gt;</span> <span class='op'>=</span> <span class='ident'>generic</span>::<span class='ident'>Prf</span><span class='op'>&lt;</span><span class='ident'>SipPrf</span>, <span class='ident'>Rng</span><span class='op'>&gt;</span>;
+<span class='kw'>pub</span> <span class='kw'>type</span> <span class='ident'>Prf</span><span class='op'>&lt;</span><span class='ident'>Rng</span><span class='op'>&gt;</span> <span class='op'>=</span> <span class='ident'>generic</span>::<span class='ident'>Prf</span><span class='op'>&lt;</span><span class='ident'>ChaskeyPrf</span>, <span class='ident'>Rng</span><span class='op'>&gt;</span>;
 
 
 <span class='doccomment'>/// A trait for **splittable** pseudo random generators.  </span>
