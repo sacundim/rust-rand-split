@@ -176,7 +176,7 @@ impl Rand for ChaskeyRng {
 
 /// Function used in the Chaskey key schedule.
 #[inline(always)]
-pub fn times_two(key: [u32; 4]) -> [u32; 4] {
+fn times_two(key: [u32; 4]) -> [u32; 4] {
     const C: [u32; 2] = [0x00, 0x87];
     [key[0].wrapping_shl(1) ^ C[key[3].wrapping_shr(31) as usize],
      key[1].wrapping_shl(1) ^ key[0].wrapping_shr(31),
@@ -186,7 +186,7 @@ pub fn times_two(key: [u32; 4]) -> [u32; 4] {
 
 /// XOR a `[u32; 4]` value into the Chaskey state.
 #[inline(always)]
-pub fn xor_u32x4(state: &mut [u32; 4], block: &[u32; 4]) {
+fn xor_u32x4(state: &mut [u32; 4], block: &[u32; 4]) {
     state[0] ^= block[0];
     state[1] ^= block[1];
     state[2] ^= block[2];
@@ -195,7 +195,7 @@ pub fn xor_u32x4(state: &mut [u32; 4], block: &[u32; 4]) {
 
 // The original Chaskey permutation (8 rounds).
 #[inline(always)]
-pub fn permute8(state: &mut [u32; 4]) {
+fn permute8(state: &mut [u32; 4]) {
     permute4(state); permute4(state);
 }
 
@@ -207,7 +207,7 @@ fn permute4(state: &mut [u32; 4]) {
 
 /// The Chaskey round function.
 #[inline(always)]
-pub fn round(v: &mut [u32; 4]) {
+fn round(v: &mut [u32; 4]) {
     v[0]  = v[0].wrapping_add(v[1]); v[2]  = v[2].wrapping_add(v[3]);
     v[1]  = v[1].rotate_left(5);     v[3]  = v[3].rotate_left(8);
     v[1] ^= v[0];                    v[3] ^= v[2];
