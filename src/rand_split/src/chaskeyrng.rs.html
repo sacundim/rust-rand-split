@@ -512,7 +512,7 @@
 
 <span class='doccomment'>/// Function used in the Chaskey key schedule.</span>
 <span class='attribute'>#[<span class='ident'>inline</span>(<span class='ident'>always</span>)]</span>
-<span class='kw'>pub</span> <span class='kw'>fn</span> <span class='ident'>times_two</span>(<span class='ident'>key</span>: [<span class='ident'>u32</span>; <span class='number'>4</span>]) <span class='op'>-&gt;</span> [<span class='ident'>u32</span>; <span class='number'>4</span>] {
+<span class='kw'>fn</span> <span class='ident'>times_two</span>(<span class='ident'>key</span>: [<span class='ident'>u32</span>; <span class='number'>4</span>]) <span class='op'>-&gt;</span> [<span class='ident'>u32</span>; <span class='number'>4</span>] {
     <span class='kw'>const</span> <span class='ident'>C</span>: [<span class='ident'>u32</span>; <span class='number'>2</span>] <span class='op'>=</span> [<span class='number'>0x00</span>, <span class='number'>0x87</span>];
     [<span class='ident'>key</span>[<span class='number'>0</span>].<span class='ident'>wrapping_shl</span>(<span class='number'>1</span>) <span class='op'>^</span> <span class='ident'>C</span>[<span class='ident'>key</span>[<span class='number'>3</span>].<span class='ident'>wrapping_shr</span>(<span class='number'>31</span>) <span class='kw'>as</span> <span class='ident'>usize</span>],
      <span class='ident'>key</span>[<span class='number'>1</span>].<span class='ident'>wrapping_shl</span>(<span class='number'>1</span>) <span class='op'>^</span> <span class='ident'>key</span>[<span class='number'>0</span>].<span class='ident'>wrapping_shr</span>(<span class='number'>31</span>),
@@ -522,7 +522,7 @@
 
 <span class='doccomment'>/// XOR a `[u32; 4]` value into the Chaskey state.</span>
 <span class='attribute'>#[<span class='ident'>inline</span>(<span class='ident'>always</span>)]</span>
-<span class='kw'>pub</span> <span class='kw'>fn</span> <span class='ident'>xor_u32x4</span>(<span class='ident'>state</span>: <span class='kw-2'>&amp;</span><span class='kw-2'>mut</span> [<span class='ident'>u32</span>; <span class='number'>4</span>], <span class='ident'>block</span>: <span class='kw-2'>&amp;</span>[<span class='ident'>u32</span>; <span class='number'>4</span>]) {
+<span class='kw'>fn</span> <span class='ident'>xor_u32x4</span>(<span class='ident'>state</span>: <span class='kw-2'>&amp;</span><span class='kw-2'>mut</span> [<span class='ident'>u32</span>; <span class='number'>4</span>], <span class='ident'>block</span>: <span class='kw-2'>&amp;</span>[<span class='ident'>u32</span>; <span class='number'>4</span>]) {
     <span class='ident'>state</span>[<span class='number'>0</span>] <span class='op'>^=</span> <span class='ident'>block</span>[<span class='number'>0</span>];
     <span class='ident'>state</span>[<span class='number'>1</span>] <span class='op'>^=</span> <span class='ident'>block</span>[<span class='number'>1</span>];
     <span class='ident'>state</span>[<span class='number'>2</span>] <span class='op'>^=</span> <span class='ident'>block</span>[<span class='number'>2</span>];
@@ -531,7 +531,7 @@
 
 <span class='comment'>// The original Chaskey permutation (8 rounds).</span>
 <span class='attribute'>#[<span class='ident'>inline</span>(<span class='ident'>always</span>)]</span>
-<span class='kw'>pub</span> <span class='kw'>fn</span> <span class='ident'>permute8</span>(<span class='ident'>state</span>: <span class='kw-2'>&amp;</span><span class='kw-2'>mut</span> [<span class='ident'>u32</span>; <span class='number'>4</span>]) {
+<span class='kw'>fn</span> <span class='ident'>permute8</span>(<span class='ident'>state</span>: <span class='kw-2'>&amp;</span><span class='kw-2'>mut</span> [<span class='ident'>u32</span>; <span class='number'>4</span>]) {
     <span class='ident'>permute4</span>(<span class='ident'>state</span>); <span class='ident'>permute4</span>(<span class='ident'>state</span>);
 }
 
@@ -543,7 +543,7 @@
 
 <span class='doccomment'>/// The Chaskey round function.</span>
 <span class='attribute'>#[<span class='ident'>inline</span>(<span class='ident'>always</span>)]</span>
-<span class='kw'>pub</span> <span class='kw'>fn</span> <span class='ident'>round</span>(<span class='ident'>v</span>: <span class='kw-2'>&amp;</span><span class='kw-2'>mut</span> [<span class='ident'>u32</span>; <span class='number'>4</span>]) {
+<span class='kw'>fn</span> <span class='ident'>round</span>(<span class='ident'>v</span>: <span class='kw-2'>&amp;</span><span class='kw-2'>mut</span> [<span class='ident'>u32</span>; <span class='number'>4</span>]) {
     <span class='ident'>v</span>[<span class='number'>0</span>]  <span class='op'>=</span> <span class='ident'>v</span>[<span class='number'>0</span>].<span class='ident'>wrapping_add</span>(<span class='ident'>v</span>[<span class='number'>1</span>]); <span class='ident'>v</span>[<span class='number'>2</span>]  <span class='op'>=</span> <span class='ident'>v</span>[<span class='number'>2</span>].<span class='ident'>wrapping_add</span>(<span class='ident'>v</span>[<span class='number'>3</span>]);
     <span class='ident'>v</span>[<span class='number'>1</span>]  <span class='op'>=</span> <span class='ident'>v</span>[<span class='number'>1</span>].<span class='ident'>rotate_left</span>(<span class='number'>5</span>);     <span class='ident'>v</span>[<span class='number'>3</span>]  <span class='op'>=</span> <span class='ident'>v</span>[<span class='number'>3</span>].<span class='ident'>rotate_left</span>(<span class='number'>8</span>);
     <span class='ident'>v</span>[<span class='number'>1</span>] <span class='op'>^=</span> <span class='ident'>v</span>[<span class='number'>0</span>];                    <span class='ident'>v</span>[<span class='number'>3</span>] <span class='op'>^=</span> <span class='ident'>v</span>[<span class='number'>2</span>];

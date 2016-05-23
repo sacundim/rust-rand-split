@@ -1,1 +1,1 @@
-initSidebarItems({"fn":[["permute8",""],["round","The Chaskey round function."],["times_two","Function used in the Chaskey key schedule."],["xor_u32x4","XOR a `[u32; 4]` value into the Chaskey state."]],"struct":[["ChaskeyPrf","A PRF taken off a `ChaskeyRng`."],["ChaskeyRng","A splittable pseudorandom generator based on Chaskey."]]});
+initSidebarItems({"struct":[["ChaskeyPrf","A PRF taken off a `ChaskeyRng`."],["ChaskeyRng","A splittable pseudorandom generator based on Chaskey."]]});
