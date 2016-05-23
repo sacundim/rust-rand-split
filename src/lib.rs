@@ -198,17 +198,18 @@ extern crate rand;
 
 pub mod generic;
 pub mod siprng;
+pub mod chaskeyrng;
 
 use rand::{Rng, Rand};
-use siprng::{SipRng, SipPrf};
+use chaskeyrng::{ChaskeyRng, ChaskeyPrf};
 use std::hash::{Hash, Hasher, SipHasher};
 
 
 /// A wrapper that generically adds splittability to RNGs.
-pub type Split<Rng> = generic::Split<SipRng, Rng>;
+pub type Split<Rng> = generic::Split<ChaskeyRng, Rng>;
 
 /// The pseudo-random functions of a generic `Split` RNG.
-pub type Prf<Rng> = generic::Prf<SipPrf, Rng>;
+pub type Prf<Rng> = generic::Prf<ChaskeyPrf, Rng>;
 
 
 /// A trait for **splittable** pseudo random generators.  
