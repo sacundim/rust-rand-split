@@ -49,16 +49,16 @@ impl Rng for TwoLcgRng {
     }
 
     fn next_u64(&mut self) -> u64 {
-        const MASK: Wrapping<u64> = Wrapping(0x3Fu64);
+        const MASK: i64 = 0x3Fi64;
         const C0: Wrapping<u64> = Wrapping(2685821657736338717u64);
         const C1: Wrapping<u64> = Wrapping(3202034522624059733u64);
         const C2: Wrapping<u64> = Wrapping(3935559000370003845u64);
 
         let mut r = (self.s1 << 32) | (self.s1 >> 32);
         r ^= self.s2;
-        let t = self.s1 >> 58;
-        r = (r << ((t & MASK).0 as usize))
-          | (r >> (((-t) & MASK).0 as usize));
+        let t: i64 = (self.s1 >> 58).0 as i64;
+        r = (r << ((t & MASK) as usize))
+          | (r >> (((-t) & MASK) as usize));
         r *= C0;
         self.s1 = self.s1 * C1 + self.g1;
         self.s2 = self.s2 * C2 + self.g2;
