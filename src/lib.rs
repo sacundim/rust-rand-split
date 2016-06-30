@@ -199,6 +199,7 @@ extern crate rand;
 pub mod generic;
 pub mod siprng;
 pub mod chaskeyrng;
+pub mod twolcg;
 
 use rand::{Rng, Rand};
 use chaskeyrng::{ChaskeyRng, ChaskeyPrf};
