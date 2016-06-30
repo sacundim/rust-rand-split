@@ -14,6 +14,7 @@ use rand::isaac::{IsaacRng, Isaac64Rng};
 use rand_split::Split;
 use rand_split::siprng::SipRng;
 use rand_split::chaskeyrng::ChaskeyRng;
+use rand_split::twolcg::TwoLcgRng;
 use std::mem::size_of;
 use test::{black_box, Bencher};
 
@@ -31,6 +32,17 @@ fn rand_siprng(b: &mut Bencher) {
 #[bench]
 fn rand_chaskeyng(b: &mut Bencher) {
     let mut rng: ChaskeyRng = OsRng::new().unwrap().gen();
+    b.iter(|| {
+        for _ in 0..RAND_BENCH_N {
+            black_box(rng.gen::<usize>());
+        }
+    });
+    b.bytes = size_of::<usize>() as u64 * RAND_BENCH_N;
+}
+
+#[bench]
+fn rand_twolcg(b: &mut Bencher) {
+    let mut rng: TwoLcgRng = OsRng::new().unwrap().gen();
     b.iter(|| {
         for _ in 0..RAND_BENCH_N {
             black_box(rng.gen::<usize>());

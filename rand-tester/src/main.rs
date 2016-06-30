@@ -22,6 +22,7 @@ use rand::os::OsRng;
 
 use rand_split::siprng::SipRng;
 use rand_split::chaskeyrng::ChaskeyRng;
+use rand_split::twolcg::TwoLcgRng;
 
 use std::io::{self, Write};
 
@@ -69,6 +70,8 @@ fn dispatch() -> io::Result<Void> {
                     .about("The siprng generator, from rand-split"))
         .subcommand(SubCommand::with_name("chaskey")
                     .about("The chaskey generator, from rand-split"))
+        .subcommand(SubCommand::with_name("twolcg")
+                    .about("The TwoLCG generator, from rand-split"))
         ;
     let matches = app.get_matches();
 
@@ -85,6 +88,7 @@ fn dispatch() -> io::Result<Void> {
         Some("fortuna") => try!(run_fortuna()),
         Some("siprng") => try!(run_rng::<SipRng>()),
         Some("chaskey") => try!(run_rng::<ChaskeyRng>()),
+        Some("twolcg") => try!(run_rng::<TwoLcgRng>()),
         _ => print_usage(matches.usage()),
     })
 }
