@@ -592,6 +592,7 @@
 <span id="548">548</span>
 <span id="549">549</span>
 <span id="550">550</span>
+<span id="551">551</span>
 </pre><pre class='rust '>
 <span class='comment'>// Copyright 2016 Luis Casillas. See the COPYRIGHT file at the</span>
 <span class='comment'>// top-level directory of this distribution</span>
@@ -794,6 +795,7 @@
 <span class='kw'>pub</span> <span class='kw'>mod</span> <span class='ident'>generic</span>;
 <span class='kw'>pub</span> <span class='kw'>mod</span> <span class='ident'>siprng</span>;
 <span class='kw'>pub</span> <span class='kw'>mod</span> <span class='ident'>chaskeyrng</span>;
+<span class='kw'>pub</span> <span class='kw'>mod</span> <span class='ident'>twolcg</span>;
 
 <span class='kw'>use</span> <span class='ident'>rand</span>::{<span class='ident'>Rng</span>, <span class='ident'>Rand</span>};
 <span class='kw'>use</span> <span class='ident'>chaskeyrng</span>::{<span class='ident'>ChaskeyRng</span>, <span class='ident'>ChaskeyPrf</span>};
@@ -1136,8 +1138,8 @@
         <span class='kw'>loop</span> {
             <span class='kw'>match</span> (<span class='ident'>i</span>.<span class='ident'>next</span>(), <span class='ident'>j</span>.<span class='ident'>next</span>()) {
                 (<span class='prelude-val'>Some</span>(<span class='kw-2'>ref</span> <span class='ident'>ei</span>), <span class='prelude-val'>Some</span>(<span class='kw-2'>ref</span> <span class='ident'>ej</span>)) <span class='kw'>if</span> <span class='ident'>ei</span> <span class='op'>==</span> <span class='ident'>ej</span> <span class='op'>=&gt;</span> { }
-                (<span class='prelude-val'>None</span>, <span class='prelude-val'>None</span>) <span class='op'>=&gt;</span> <span class='kw'>return</span> <span class='boolvalue'>true</span>,
-                _ <span class='op'>=&gt;</span> <span class='kw'>return</span> <span class='boolvalue'>false</span>,
+                (<span class='prelude-val'>None</span>, <span class='prelude-val'>None</span>) <span class='op'>=&gt;</span> <span class='kw'>return</span> <span class='bool-val'>true</span>,
+                _ <span class='op'>=&gt;</span> <span class='kw'>return</span> <span class='bool-val'>false</span>,
             }
         }
     }

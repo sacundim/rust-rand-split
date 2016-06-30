@@ -1,0 +1,1 @@
+initSidebarItems({"struct":[["TwoLcgPrf","A PRF taken off a `TwoLcgRng`."],["TwoLcgRng","A splittable pseudorandom generator based on the TwoLCG algorithm."]]});

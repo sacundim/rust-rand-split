@@ -47,13 +47,13 @@
                    <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">
                        [<span class='inner'>&#x2212;</span>]
                    </a>
-               </span><a id='src-244' class='srclink' href='../src/rand_split/src/lib.rs.html#216-239' title='goto source code'>[src]</a></span></h1>
+               </span><a id='src-305' class='srclink' href='../src/rand_split/src/lib.rs.html#217-240' title='goto source code'>[src]</a></span></h1>
 <pre class='rust trait'>pub trait SplitRng: <a class='trait' href='../rand/trait.Rng.html' title='rand::Rng'>Rng</a> + <a class='trait' href='https://doc.rust-lang.org/nightly/core/marker/trait.Sized.html' title='core::marker::Sized'>Sized</a> {
     type <a href='#associatedtype.Prf' class='type'>Prf</a>: <a class='trait' href='../rand_split/trait.SplitPrf.html' title='rand_split::SplitPrf'>SplitPrf</a>&lt;Self&gt;;
     fn <a href='#tymethod.splitn' class='fnname'>splitn</a>(&amp;mut self) -&gt; Self::<a class='trait' href='../rand_split/trait.SplitRng.html' title='rand_split::SplitRng'>Prf</a>;
     fn <a href='#tymethod.split' class='fnname'>split</a>(&amp;mut self) -&gt; Self;
 
-    fn <a href='#method.split_gen' class='fnname'>split_gen</a>&lt;A: <a class='trait' href='../rand_split/trait.SplitRand.html' title='rand_split::SplitRand'>SplitRand</a>&gt;(&amp;mut self) -&gt; A { ... }
+    fn <a href='#method.split_gen' class='fnname'>split_gen</a>&lt;A:&nbsp;<a class='trait' href='../rand_split/trait.SplitRand.html' title='rand_split::SplitRand'>SplitRand</a>&gt;(&amp;mut self) -&gt; A { ... }
 }</pre><div class='docblock'><p>A trait for <strong>splittable</strong> pseudo random generators.</p>
 </div>
             <h2 id='associated-types'>Associated Types</h2>
@@ -78,12 +78,13 @@ implied here</strong>.</p>
 </div></div>
             <h2 id='provided-methods'>Provided Methods</h2>
             <div class='methods'>
-        <h3 id='method.split_gen' class='method stab '><code>fn <a href='#method.split_gen' class='fnname'>split_gen</a>&lt;A: <a class='trait' href='../rand_split/trait.SplitRand.html' title='rand_split::SplitRand'>SplitRand</a>&gt;(&amp;mut self) -&gt; A</code></h3></div>
+        <h3 id='method.split_gen' class='method stab '><code>fn <a href='#method.split_gen' class='fnname'>split_gen</a>&lt;A:&nbsp;<a class='trait' href='../rand_split/trait.SplitRand.html' title='rand_split::SplitRand'>SplitRand</a>&gt;(&amp;mut self) -&gt; A</code></h3></div>
         <h2 id='implementors'>Implementors</h2>
         <ul class='item-list' id='implementors-list'>
-    <li><code>impl&lt;S, R&gt; SplitRng for <a class='struct' href='../rand_split/generic/struct.Split.html' title='rand_split::generic::Split'>Split</a>&lt;S, R&gt; <span class='where'>where S: <a class='trait' href='../rand_split/trait.SplitRng.html' title='rand_split::SplitRng'>SplitRng</a>, R: <a class='trait' href='../rand/trait.Rng.html' title='rand::Rng'>Rng</a> + <a class='trait' href='../rand/trait.Rand.html' title='rand::Rand'>Rand</a></span></code></li>
+    <li><code>impl&lt;S,&nbsp;R&gt; SplitRng for <a class='struct' href='../rand_split/generic/struct.Split.html' title='rand_split::generic::Split'>Split</a>&lt;S,&nbsp;R&gt; <span class='where'>where S: <a class='trait' href='../rand_split/trait.SplitRng.html' title='rand_split::SplitRng'>SplitRng</a>, R: <a class='trait' href='../rand/trait.Rng.html' title='rand::Rng'>Rng</a> + <a class='trait' href='../rand/trait.Rand.html' title='rand::Rand'>Rand</a></span></code></li>
 <li><code>impl SplitRng for <a class='struct' href='../rand_split/siprng/struct.SipRng.html' title='rand_split::siprng::SipRng'>SipRng</a></code></li>
 <li><code>impl SplitRng for <a class='struct' href='../rand_split/chaskeyrng/struct.ChaskeyRng.html' title='rand_split::chaskeyrng::ChaskeyRng'>ChaskeyRng</a></code></li>
+<li><code>impl SplitRng for <a class='struct' href='../rand_split/twolcg/struct.TwoLcgRng.html' title='rand_split::twolcg::TwoLcgRng'>TwoLcgRng</a></code></li>
 </ul><script type="text/javascript" async
                          src="../implementors/rand_split/trait.SplitRng.js">
                  </script></section>
